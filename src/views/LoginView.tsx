@@ -8,12 +8,16 @@ const LoginView: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [message, setMessage] = useState<string | null>(null);
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setMessage(null);
 
         try {
             if (isLogin) {
@@ -26,11 +30,37 @@ const LoginView: React.FC = () => {
                 const { error } = await supabase.auth.signUp({
                     email,
                     password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            phone: phone,
+                        }
+                    }
                 });
                 if (error) throw error;
-                // Auto login or show message? Supabase auto logs in if email confirm is off or returns session.
-                // Assuming default settings which usually require email confirmation or just works.
+                setMessage('Conta criada com sucesso! Verifique seu email se necessário.');
             }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            setError('Por favor, insira seu email primeiro.');
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        setMessage(null);
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+            });
+            if (error) throw error;
+            setMessage('Email de redefinição enviado com sucesso!');
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -58,6 +88,42 @@ const LoginView: React.FC = () => {
                 </div>
 
                 <form onSubmit={handleAuth} className="space-y-4">
+                    {!isLogin && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome Completo</label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all dark:text-white"
+                                        placeholder="Seu nome"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Telefone</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-phone"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                    </span>
+                                    <input
+                                        type="tel"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all dark:text-white"
+                                        placeholder="(00) 00000-0000"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
                         <div className="relative">
@@ -74,7 +140,18 @@ const LoginView: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Senha</label>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Senha</label>
+                            {isLogin && (
+                                <button
+                                    type="button"
+                                    onClick={handleForgotPassword}
+                                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-medium"
+                                >
+                                    Esqueceu sua senha?
+                                </button>
+                            )}
+                        </div>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                             <input
@@ -94,6 +171,12 @@ const LoginView: React.FC = () => {
                         </div>
                     )}
 
+                    {message && (
+                        <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm rounded-lg">
+                            {message}
+                        </div>
+                    )}
+
                     <button
                         type="submit"
                         disabled={loading}
@@ -101,6 +184,7 @@ const LoginView: React.FC = () => {
                     >
                         {loading ? <Loader2 className="animate-spin" size={20} /> : (isLogin ? 'Entrar' : 'Criar Conta')}
                     </button>
+
                 </form>
 
                 <div className="mt-6 text-center">
