@@ -196,7 +196,7 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
                     <td className="px-6 py-4">
                       {totalBilled > 0 && (
                         <>
-                          <p className="font-medium text-slate-800 dark:text-slate-200">R$ {totalBilled.toLocaleString('pt-BR')}</p>
+                          <p className="font-medium text-slate-800 dark:text-slate-200">R$ {totalBilled.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                           {clientInvoices.length > 0 && (
                             <p className="text-xs text-slate-500 dark:text-slate-400">{clientInvoices.length} {clientInvoices.length === 1 ? 'fatura paga' : 'faturas pagas'}</p>
                           )}
@@ -285,21 +285,36 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
               {/* Resumo */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Pago</p>
-                  <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
-                    R$ {invoices.filter(i => i.clientId === viewingClient.id && i.status === 'PAID').reduce((acc, curr) => acc + curr.value, 0).toLocaleString('pt-BR')}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-600 dark:text-green-400">
+                      <Receipt size={20} />
+                    </div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pago</p>
+                  </div>
+                  <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                    R$ {invoices.filter(i => i.clientId === viewingClient.id && i.status === 'PAID').reduce((acc, curr) => acc + curr.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Negócios Ativos</p>
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-indigo-600 dark:text-indigo-400">
+                      <Briefcase size={20} />
+                    </div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Negócios Ativos</p>
+                  </div>
                   <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
                     {deals.filter(d => d.clientId === viewingClient.id && d.stage !== 'CLOSED').length}
                   </p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Cadastro desde</p>
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-400">
+                      <Calendar size={20} />
+                    </div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cadastro</p>
+                  </div>
                   <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
                     {new Date(viewingClient.createdAt).toLocaleDateString('pt-BR', { year: 'numeric', month: 'short' })}
                   </p>
@@ -308,59 +323,67 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Coluna 1: Negócios */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold border-b border-slate-100 dark:border-slate-800 pb-2">
-                    <Briefcase size={18} className="text-indigo-600" />
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-700/50">
+                  <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold mb-4">
+                    <div className="p-2 bg-indigo-600 rounded-lg text-white">
+                      <Briefcase size={16} />
+                    </div>
                     <h3>Negócios e Funil</h3>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {deals.filter(d => d.clientId === viewingClient.id).length > 0 ? (
                       deals.filter(d => d.clientId === viewingClient.id).map(deal => {
                         const service = services.find(s => s.id === deal.serviceId);
                         const stageInfo = STAGES.find(s => s.id === deal.stage);
                         return (
-                          <div key={deal.id} className="p-3 bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-lg flex items-center justify-between">
+                          <div key={deal.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl flex items-center justify-between shadow-sm">
                             <div>
-                              <p className="text-sm font-semibold dark:text-slate-200">{service?.name || 'Serviço Personalizado'}</p>
+                              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{service?.name || 'Serviço Personalizado'}</p>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${stageInfo?.color}`}>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${stageInfo?.color}`}>
                                   {stageInfo?.label}
                                 </span>
-                                <span className="text-[10px] text-slate-400">{new Date(deal.createdAt).toLocaleDateString('pt-BR')}</span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500">{new Date(deal.createdAt).toLocaleDateString('pt-BR')}</span>
                               </div>
                             </div>
-                            <p className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">R$ {deal.value.toLocaleString('pt-BR')}</p>
+                            <p className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">R$ {deal.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                           </div>
                         );
                       })
                     ) : (
-                      <p className="text-xs text-slate-400 italic">Nenhum negócio registrado.</p>
+                      <div className="text-center py-8">
+                        <p className="text-sm text-slate-400 italic">Nenhum negócio registrado.</p>
+                      </div>
                     )}
                   </div>
                 </div>
 
                 {/* Coluna 2: Faturas */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold border-b border-slate-100 dark:border-slate-800 pb-2">
-                    <Receipt size={18} className="text-indigo-600" />
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-700/50">
+                  <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold mb-4">
+                    <div className="p-2 bg-green-600 rounded-lg text-white">
+                      <Receipt size={16} />
+                    </div>
                     <h3>Histórico de Faturas</h3>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {invoices.filter(i => i.clientId === viewingClient.id).length > 0 ? (
                       invoices.filter(i => i.clientId === viewingClient.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(inv => (
-                        <div key={inv.id} className="p-3 bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-lg flex items-center justify-between">
+                        <div key={inv.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl flex items-center justify-between shadow-sm">
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="text-xs font-bold text-slate-400">#{inv.id.substring(0, 8)}</p>
+                              {inv.invoiceNumber && <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{inv.invoiceNumber}</p>}
                               {getInvoiceStatusBadge(inv.status)}
                             </div>
-                            <p className="text-[10px] text-slate-500 mt-1">Vencimento: {new Date(inv.dueDate).toLocaleDateString('pt-BR')}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Vencimento: {new Date(inv.dueDate).toLocaleDateString('pt-BR')}</p>
                           </div>
-                          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">R$ {inv.value.toLocaleString('pt-BR')}</p>
+                          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">R$ {inv.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-slate-400 italic">Nenhuma fatura gerada.</p>
+                      <div className="text-center py-8">
+                        <p className="text-sm text-slate-400 italic">Nenhuma fatura gerada.</p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -368,9 +391,14 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
 
               {/* Observações */}
               {viewingClient.observations && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/10 p-4 rounded-xl border border-yellow-100 dark:border-yellow-900/30">
-                  <p className="text-xs font-bold text-yellow-700 dark:text-yellow-500 uppercase mb-1">Notas Internas</p>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200 italic">{viewingClient.observations}</p>
+                <div className="bg-amber-50 dark:bg-amber-900/10 p-6 rounded-3xl border border-amber-100 dark:border-amber-900/20 flex gap-4">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-xl text-amber-600 dark:text-amber-400 h-fit">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-wider mb-1">Notas Internas</p>
+                    <p className="text-sm text-amber-800 dark:text-amber-200 italic leading-relaxed">{viewingClient.observations}</p>
+                  </div>
                 </div>
               )}
             </div>

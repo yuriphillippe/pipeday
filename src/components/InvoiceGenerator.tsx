@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Download, Plus, Trash2, FileText } from 'lucide-react';
 import { Invoice, Client, Service } from '../../types';
 
@@ -39,7 +39,7 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
     });
 
     const [invoiceDetails, setInvoiceDetails] = useState({
-        number: invoice.id.substring(0, 8).toUpperCase(),
+        number: invoice.invoiceNumber || invoice.id.substring(0, 8).toUpperCase(),
         issueDate: invoice.createdAt,
         dueDate: invoice.dueDate
     });
@@ -88,27 +88,23 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
     const downloadPDF = async () => {
         if (!invoiceRef.current) return;
 
-        // Save current styles to restore after generation
         const originalTransform = invoiceRef.current.style.transform;
         const originalMargin = invoiceRef.current.style.margin;
 
         setIsGenerating(true);
 
         try {
-            // Reset scale for capture to ensure high quality A4 size
             invoiceRef.current.style.transform = 'scale(1)';
-            invoiceRef.current.style.margin = '0 auto'; // Center it for capture if needed, though html2canvas captures element directly
+            invoiceRef.current.style.margin = '0';
 
             const html2canvas = (await import('html2canvas')).default;
             const { jsPDF } = await import('jspdf');
 
             const canvas = await html2canvas(invoiceRef.current, {
-                scale: 2, // High resolution
+                scale: 2,
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#ffffff',
-                windowWidth: 210 * 3.78, // Approximate pixel width of A4 at 96DPI (roughly 794px) to ensure media queries behave?
-                // Actually defaulting is usually fine if we remove the scale transform
+                backgroundColor: '#ffffff'
             });
 
             const imgData = canvas.toDataURL('image/png');
@@ -118,17 +114,20 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
 
             const imgWidth = canvas.width;
             const imgHeight = canvas.height;
-            const ratio = imgWidth / imgHeight;
+            const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
 
-            const finalHeight = pdfWidth / ratio;
+            const finalWidth = imgWidth * ratio;
+            const finalHeight = imgHeight * ratio;
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight);
-            pdf.save(`Fatura_${invoiceDetails.number}.pdf`);
+            const x = (pdfWidth - finalWidth) / 2;
+            const y = 0;
+
+            pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+            pdf.save(`proposta-${invoiceDetails.number}.pdf`);
         } catch (error) {
             console.error('Error generating PDF:', error);
             alert('Erro ao gerar PDF. Tente novamente.');
         } finally {
-            // Restore functionality
             if (invoiceRef.current) {
                 invoiceRef.current.style.transform = originalTransform;
                 invoiceRef.current.style.margin = originalMargin;
@@ -146,7 +145,7 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             <FileText className="text-indigo-600" />
-                            Editor
+                            Editor de Proposta
                         </h2>
                         <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                             <X size={24} />
@@ -171,14 +170,14 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
                                     type="text"
                                     value={companyDetails.name}
                                     onChange={e => setCompanyDetails({ ...companyDetails, name: e.target.value })}
-                                    className="w-full text-xs p-2 rounded border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800"
+                                    className="w-full text-xs p-2 rounded border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                                     placeholder="Nome da Empresa"
                                 />
                                 <input
                                     type="text"
                                     value={companyDetails.nif}
                                     onChange={e => setCompanyDetails({ ...companyDetails, nif: e.target.value })}
-                                    className="w-full text-xs p-2 rounded border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800"
+                                    className="w-full text-xs p-2 rounded border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                                     placeholder="CNPJ / NIF"
                                 />
                             </div>
@@ -209,13 +208,14 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
                 <div className="flex-1 bg-slate-500/10 dark:bg-black/20 overflow-auto p-8 relative flex items-start justify-center">
                     <div
                         ref={invoiceRef}
+                        id="invoice-content"
                         className="bg-white text-slate-900 shadow-2xl mx-auto flex flex-col relative transition-transform duration-200 ease-out origin-top"
                         style={{
                             width: '210mm',
                             minHeight: '297mm',
                             fontFamily: "'Inter', sans-serif",
                             transform: `scale(${zoom})`,
-                            marginBottom: `${(297 * zoom) - 297}mm` // Adjust margin to prevent excessive whitespace below when scaled down
+                            marginBottom: `${(297 * zoom) - 297}mm`
                         }}
                     >
                         {/* Header */}
@@ -230,9 +230,9 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
                                 <p className="text-slate-500 text-sm">CNPJ: {companyDetails.nif}</p>
                             </div>
                             <div className="text-right">
-                                <h2 className="text-4xl font-black text-slate-200 uppercase tracking-widest">Fatura</h2>
+                                <h2 className="text-4xl font-black text-slate-200 uppercase tracking-widest">Proposta</h2>
                                 <div className="mt-6 space-y-1">
-                                    <p className="text-sm font-bold text-slate-600">Fatura Nº</p>
+                                    <p className="text-sm font-bold text-slate-600">Proposta Nº</p>
                                     <p className="text-lg font-bold text-slate-900 mb-2">#{invoiceDetails.number}</p>
 
                                     <p className="text-sm font-bold text-slate-600">Data de Emissão</p>
@@ -246,7 +246,7 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
 
                         {/* Client Info */}
                         <div className="p-12 pb-6">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Faturado Para</h3>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Apresentado Para</h3>
                             <div className="text-slate-800">
                                 <h2 className="text-xl font-bold">{clientDetails.name}</h2>
                                 {clientDetails.company && <p className="text-lg text-slate-600">{clientDetails.company}</p>}

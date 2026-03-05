@@ -18,9 +18,10 @@ import { STAGES } from '../constants';
 interface DashboardViewProps {
   isDarkMode: boolean;
   searchQuery?: string;
+  setActiveTab: (tab: any) => void;
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery = '' }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery = '', setActiveTab }) => {
   const { clients, deals, invoices, userProfile } = useData();
 
   // Global Search Logic
@@ -90,7 +91,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
       <div className="mt-4">
         <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{title}</p>
         <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1">
-          {isCurrency ? `R$ ${value.toLocaleString('pt-BR')}` : value}
+          {isCurrency ? `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : value}
         </h3>
       </div>
     </div>
@@ -136,7 +137,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
                   return (
                     <div key={deal.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl flex justify-between items-center">
                       <div>
-                        <p className="font-bold text-slate-800 dark:text-slate-100">R$ {deal.value.toLocaleString('pt-BR')}</p>
+                        <p className="font-bold text-slate-800 dark:text-slate-100">R$ {deal.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         <p className="text-xs text-slate-500">{client?.name || 'Cliente desconhecido'}</p>
                       </div>
                       <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
@@ -177,7 +178,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title="Total Recebido"
           value={stats.receivedThisMonth}
@@ -238,7 +239,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
                     backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
                     color: isDarkMode ? '#f1f5f9' : '#1e293b'
                   }}
-                  formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR')}`}
+                  formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                 />
                 <Bar dataKey="Valor" radius={[8, 8, 0, 0]} barSize={60}>
                   {chartData.map((entry, index) => (
@@ -281,7 +282,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
                     ? "Nenhum contato esperando proposta há mais de 48h."
                     : `${stats.staleDealsCount} contatos no funil não recebem uma proposta há mais de 48h.`}
                 </p>
-                <button className="text-xs font-bold text-indigo-700 dark:text-indigo-400 mt-2 hover:underline">Ver funil</button>
+                <button
+                  onClick={() => setActiveTab('funnel')}
+                  className="text-xs font-bold text-indigo-700 dark:text-indigo-400 mt-2 hover:underline"
+                >
+                  Ver funil
+                </button>
               </div>
             </div>
           </div>

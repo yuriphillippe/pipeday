@@ -98,6 +98,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         dueDate: data.due_date,
         status: data.status,
         pixCode: data.pix_code,
+        invoiceNumber: data.invoice_number,
+        dealId: data.deal_id,
         createdAt: data.created_at,
     });
 
@@ -205,14 +207,31 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
 
-    const addInvoice = async (invoice: Omit<Invoice, 'id' | 'createdAt'>) => {
+    const addInvoice = async (invoice: Omit<Invoice, 'id' | 'createdAt'>, dealId?: string) => {
+        // Generate sequential number YYYY/MM/Count
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+
+        // Get count of invoices in this month to determine sequence
+        const startOfMonth = new Date(year, now.getMonth(), 1).toISOString();
+        const { count } = await supabase
+            .from('invoices')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', startOfMonth);
+
+        const sequence = String((count || 0) + 1).padStart(3, '0');
+        const invoiceNumber = `${year}/${month}/${sequence}`;
+
         const { error } = await supabase.from('invoices').insert([{
             client_id: invoice.clientId,
             service_id: invoice.serviceId,
             value: invoice.value,
             due_date: invoice.dueDate,
             status: invoice.status,
-            pix_code: invoice.pixCode
+            pix_code: invoice.pixCode,
+            invoice_number: invoiceNumber, // Assuming we added this column or will use metadata
+            deal_id: dealId // For cascade delete
         }]);
         if (error) throw error;
         await refreshData();
@@ -229,6 +248,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
 
     const deleteDeal = async (id: string) => {
+        // First delete associated invoices (cascade manually since we don't have DB trigers necessarily)
+        await supabase.from('invoices').delete().eq('deal_id', id);
+
         const { error } = await supabase.from('deals').delete().eq('id', id);
         if (error) throw error;
         await refreshData();

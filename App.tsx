@@ -61,7 +61,7 @@ const AppContent: React.FC = () => {
       // We will update these components to no longer require data props, or ignore the ones passed if they use context
       // But initially, they require props. Typescript will complain if we don't pass them or if we pass them and they don't exist.
       // So we MUST refactor the views to use Context.
-      case 'dashboard': return <DashboardView {...commonProps} searchQuery={searchQuery} />;
+      case 'dashboard': return <DashboardView {...commonProps} searchQuery={searchQuery} setActiveTab={setActiveTab} />;
       case 'crm': return <CRMView {...commonProps} searchQuery={searchQuery} />;
       case 'funnel': return <FunnelView {...commonProps} searchQuery={searchQuery} />;
       case 'services': return <ServicesView {...commonProps} searchQuery={searchQuery} />;

@@ -48,7 +48,14 @@ const InvoicesView: React.FC<InvoicesViewProps> = ({ isDarkMode, searchQuery }) 
   } = usePagination<Invoice>(filteredInvoices);
 
   const handleCreateInvoice = async () => {
-    if (!newInvoice.clientId || !newInvoice.serviceId) return;
+    if (!newInvoice.clientId || !newInvoice.serviceId || !newInvoice.dueDate) return;
+
+    // Validar vencimento menor que a data da fatura (hoje)
+    const today = new Date().toISOString().split('T')[0];
+    if (newInvoice.dueDate < today) {
+      alert("A data de vencimento não pode ser anterior à data de emissão (hoje).");
+      return;
+    }
 
     try {
       await addInvoice({
@@ -149,8 +156,12 @@ const InvoicesView: React.FC<InvoicesViewProps> = ({ isDarkMode, searchQuery }) 
               return (
                 <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
                   <td className="px-6 py-4">
-                    <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">#{inv.id.substring(0, 8)}</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(inv.createdAt).toLocaleDateString('pt-BR')}</p>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                        {inv.invoiceNumber || `PROPOSTA #${inv.id.substring(0, 8)}`}
+                      </span>
+                      <span className="text-[10px] text-slate-400 uppercase font-black tracking-tighter">Seq. {inv.id.substring(0, 4)}</span>
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <p className="font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[200px]">
@@ -166,7 +177,7 @@ const InvoicesView: React.FC<InvoicesViewProps> = ({ isDarkMode, searchQuery }) 
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="font-bold text-slate-900 dark:text-slate-50">R$ {inv.value.toLocaleString('pt-BR')}</p>
+                    <p className="font-black text-slate-800 dark:text-slate-100">R$ {inv.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </td>
                   <td className="px-6 py-4 flex justify-center">
                     {getStatusBadge(inv.status)}

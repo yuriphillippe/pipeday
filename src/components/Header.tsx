@@ -38,7 +38,10 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                     {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
-                <button className="relative p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors hidden sm:block">
+                <button
+                    onClick={() => alert('Você não possui novas notificações no momento.')}
+                    className="relative p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors hidden sm:block"
+                >
                     <Bell size={20} />
                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
                 </button>

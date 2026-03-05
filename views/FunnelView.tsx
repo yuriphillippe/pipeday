@@ -11,8 +11,10 @@ interface FunnelViewProps {
 }
 
 const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
-  const { deals, clients, services, addDeal, updateDeal, deleteDeal: contextDeleteDeal, addInvoice } = useData();
+  const { deals, clients, services, addDeal, updateDeal, deleteDeal: contextDeleteDeal, addInvoice, addClient } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [newClient, setNewClient] = useState({ name: '', email: '', whatsapp: '' });
   const [newDeal, setNewDeal] = useState<{
     clientId: string;
     serviceId: string;
@@ -54,22 +56,13 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
     const dealId = e.dataTransfer.getData('dealId');
     try {
       const deal = deals.find(d => d.id === dealId);
-      await updateDeal(dealId, { stage: targetStage });
 
-      if (targetStage === 'CLOSED' && deal && deal.stage !== 'CLOSED') {
-        const client = clients.find(c => c.id === deal.clientId);
-        const service = services.find(s => s.id === deal.serviceId);
-
-        await addInvoice({
-          clientId: deal.clientId,
-          serviceId: deal.serviceId,
-          value: deal.value,
-          dueDate: new Date().toISOString().split('T')[0],
-          status: 'PENDING',
-          pixCode: ''
-        });
-        alert(`Fatura gerada automaticamente para ${client?.name || 'Cliente'} em Financeiro!`);
+      if (targetStage === 'CLOSED' || targetStage === 'LOST') {
+        if (deal) setDecisionModal({ isOpen: true, deal });
+        return;
       }
+
+      await updateDeal(dealId, { stage: targetStage });
     } catch (err) {
       console.error("Failed to move deal", err);
     }
@@ -86,8 +79,11 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
     if (currentIndex < stageOrder.length - 1) {
       const nextStage = stageOrder[currentIndex + 1];
       try {
-        await updateDeal(deal.id, { stage: nextStage });
-        // Invoice generation for normal flow if any, though NEGOTIATION->CLOSED is now handled by modal
+        if (nextStage === 'CLOSED') {
+          setDecisionModal({ isOpen: true, deal });
+        } else {
+          await updateDeal(deal.id, { stage: nextStage });
+        }
       } catch (err) {
         console.error("Failed to advance deal", err);
       }
@@ -102,8 +98,6 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
 
       if (decision === 'CLOSED') {
         const client = clients.find(c => c.id === decisionModal.deal!.clientId);
-        const service = services.find(s => s.id === decisionModal.deal!.serviceId);
-
         await addInvoice({
           clientId: decisionModal.deal.clientId,
           serviceId: decisionModal.deal.serviceId,
@@ -111,7 +105,7 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
           dueDate: new Date().toISOString().split('T')[0],
           status: 'PENDING',
           pixCode: ''
-        });
+        }, decisionModal.deal.id);
         alert(`Fatura gerada automaticamente para ${client?.name || 'Cliente'} em Financeiro!`);
       }
 
@@ -124,6 +118,24 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+  };
+
+  const handleCreateClient = async () => {
+    if (!newClient.name) return;
+    try {
+      await addClient({
+        name: newClient.name,
+        email: newClient.email,
+        whatsapp: newClient.whatsapp,
+        companyName: '',
+        observations: 'Cadastrado via Funil de Vendas'
+      });
+      setIsClientModalOpen(false);
+      setNewClient({ name: '', email: '', whatsapp: '' });
+    } catch (err) {
+      console.error("Failed to create client", err);
+      alert("Erro ao criar cliente.");
+    }
   };
 
   const handleCreateDeal = async () => {
@@ -166,13 +178,21 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Funil de Vendas</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">Gerencie o progresso das suas negociações.</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-sm"
-        >
-          <Plus size={18} />
-          Novo Negócio
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsClientModalOpen(true)}
+            className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg font-medium border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
+          >
+            Novo Cliente
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            <Plus size={18} />
+            Novo Negócio
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-x-auto pb-4">
@@ -197,7 +217,7 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
                     </span>
                   </div>
                   <span className="text-xs font-bold text-slate-400 dark:text-slate-500">
-                    R$ {totalValue.toLocaleString('pt-BR')}
+                    R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
 
@@ -261,7 +281,7 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
                         <div className="flex items-center justify-between mt-auto">
                           <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-bold text-sm">
                             <span className="text-xs">R$</span>
-                            {deal.value.toLocaleString('pt-BR')}
+                            {deal.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </div>
                           <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-[10px] font-bold">
                             {client?.name ? client.name.substring(0, 2).toUpperCase() : '??'}
@@ -359,6 +379,61 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
                 className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
               >
                 Criar Negócio
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Novo Cliente */}
+      {isClientModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Novo Cliente</h2>
+              <button onClick={() => setIsClientModalOpen(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome</label>
+                <input
+                  type="text"
+                  value={newClient.name}
+                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Nome do cliente"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</label>
+                <input
+                  type="email"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Email"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">WhatsApp</label>
+                <input
+                  type="text"
+                  value={newClient.whatsapp}
+                  onChange={(e) => setNewClient({ ...newClient, whatsapp: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="WhatsApp"
+                />
+              </div>
+            </div>
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
+              <button onClick={() => setIsClientModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400">Cancelar</button>
+              <button
+                onClick={handleCreateClient}
+                className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg"
+              >
+                Cadastrar
               </button>
             </div>
           </div>

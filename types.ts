@@ -39,6 +39,8 @@ export type Invoice = {
   dueDate: string;
   status: 'PENDING' | 'PAID' | 'EXPIRED' | 'CANCELLED';
   pixCode?: string;
+  invoiceNumber?: string;
+  dealId?: string;
   createdAt: string;
 };
 
