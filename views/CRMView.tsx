@@ -16,13 +16,15 @@ import {
   Receipt,
   CheckCircle,
   AlertCircle,
-  Search
+  Search,
+  Clock
 } from 'lucide-react';
 import { Client } from '../types';
 import { STAGES } from '../constants';
 import { useData } from '../src/context/DataContext';
 import { usePagination } from '../src/hooks/usePagination';
 import PaginationControls from '../src/components/PaginationControls';
+import ClientModal from '../src/components/ClientModal';
 
 interface CRMViewProps {
   isDarkMode: boolean;
@@ -34,15 +36,6 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
-
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    whatsapp: '',
-    companyName: '',
-    observations: ''
-  });
 
   const filteredClients = clients.filter(c => {
     const term = searchQuery.toLowerCase();
@@ -64,9 +57,7 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
     setItemsPerPage
   } = usePagination<Client>(filteredClients);
 
-  const handleSave = async () => {
-    if (!formData.name) return;
-
+  const handleSave = async (formData: any) => {
     try {
       if (editingClient) {
         await updateClient(editingClient.id, formData);
@@ -76,25 +67,17 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
       closeModal();
     } catch (error) {
       console.error("Failed to save client", error);
-      alert("Erro ao salvar cliente.");
+      throw error;
     }
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingClient(null);
-    setFormData({ name: '', email: '', whatsapp: '', companyName: '', observations: '' });
   };
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
-    setFormData({
-      name: client.name,
-      email: client.email,
-      whatsapp: client.whatsapp,
-      companyName: client.companyName || '',
-      observations: client.observations || ''
-    });
     setIsModalOpen(true);
   };
 
@@ -265,124 +248,155 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
 
       {/* Modal Histórico do Cliente */}
       {viewingClient && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-indigo-600 dark:bg-indigo-900 text-white shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl font-bold">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-800">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-900 dark:to-slate-900 text-white shrink-0 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+              <div className="flex items-center gap-5 relative z-10">
+                <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl font-black border border-white/20 shadow-inner">
                   {viewingClient.name.charAt(0)}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">{viewingClient.name}</h2>
-                  {viewingClient.companyName && <p className="text-indigo-200 text-sm font-medium">{viewingClient.companyName}</p>}
-                  <p className="text-indigo-100 text-xs">{viewingClient.email} • {viewingClient.whatsapp}</p>
+                  <h2 className="text-2xl font-black tracking-tight">{viewingClient.name}</h2>
+                  {viewingClient.companyName && <p className="text-indigo-100 text-sm font-bold flex items-center gap-1.5 mt-0.5 opacity-90"><Briefcase size={14} /> {viewingClient.companyName}</p>}
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className="text-indigo-50 text-xs font-medium flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-lg"><Mail size={12} /> {viewingClient.email}</span>
+                    <span className="text-indigo-50 text-xs font-medium flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-lg"><Phone size={12} /> {viewingClient.whatsapp}</span>
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setViewingClient(null)} className="text-white/80 hover:text-white">
-                <X size={24} />
+              <button
+                onClick={() => setViewingClient(null)}
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-all backdrop-blur-sm relative z-10"
+              >
+                <X size={20} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/50 dark:bg-slate-950/50">
               {/* Resumo */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-600 dark:text-green-400">
-                      <Receipt size={20} />
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl text-emerald-600 dark:text-emerald-400">
+                      <Receipt size={22} />
                     </div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pago</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Recebido</p>
                   </div>
-                  <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                  <p className="text-3xl font-black text-slate-900 dark:text-slate-50">
                     R$ {invoices.filter(i => i.clientId === viewingClient.id && i.status === 'PAID').reduce((acc, curr) => acc + curr.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
+                  <p className="text-[10px] font-bold text-slate-400 mt-2">{invoices.filter(i => i.clientId === viewingClient.id && i.status === 'PAID').length} faturas confirmadas</p>
                 </div>
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-indigo-600 dark:text-indigo-400">
-                      <Briefcase size={20} />
+
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                      <Briefcase size={22} />
                     </div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Negócios Ativos</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Negócios Ativos</p>
                   </div>
-                  <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                  <p className="text-3xl font-black text-slate-900 dark:text-slate-50">
                     {deals.filter(d => d.clientId === viewingClient.id && d.stage !== 'CLOSED').length}
                   </p>
+                  <p className="text-[10px] font-bold text-slate-400 mt-2">No funil de vendas agora</p>
                 </div>
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-400">
-                      <Calendar size={20} />
+
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl text-amber-600 dark:text-amber-400">
+                      <Calendar size={22} />
                     </div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cadastro</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Início da Parceria</p>
                   </div>
-                  <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                  <p className="text-3xl font-black text-slate-900 dark:text-slate-50">
                     {new Date(viewingClient.createdAt).toLocaleDateString('pt-BR', { year: 'numeric', month: 'short' })}
                   </p>
+                  <p className="text-[10px] font-bold text-slate-400 mt-2">Cadastrado em {new Date(viewingClient.createdAt).toLocaleDateString('pt-BR')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Coluna 1: Negócios */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold mb-4">
-                    <div className="p-2 bg-indigo-600 rounded-lg text-white">
-                      <Briefcase size={16} />
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-200 dark:shadow-none">
+                        <Briefcase size={18} />
+                      </div>
+                      <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Negócios no Funil</h3>
                     </div>
-                    <h3>Negócios e Funil</h3>
+                    <span className="text-[10px] font-black bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-lg uppercase tracking-widest">
+                      {deals.filter(d => d.clientId === viewingClient.id).length} Total
+                    </span>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {deals.filter(d => d.clientId === viewingClient.id).length > 0 ? (
                       deals.filter(d => d.clientId === viewingClient.id).map(deal => {
                         const service = services.find(s => s.id === deal.serviceId);
                         const stageInfo = STAGES.find(s => s.id === deal.stage);
                         return (
-                          <div key={deal.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl flex items-center justify-between shadow-sm">
+                          <div key={deal.id} className="p-5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl flex items-center justify-between group transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:border-indigo-100 dark:hover:border-indigo-900/50">
                             <div>
-                              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{service?.name || 'Serviço Personalizado'}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${stageInfo?.color}`}>
+                              <p className="text-sm font-black text-slate-800 dark:text-slate-100">{service?.name || 'Serviço Personalizado'}</p>
+                              <div className="flex items-center gap-3 mt-2">
+                                <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest ${stageInfo?.color}`}>
                                   {stageInfo?.label}
                                 </span>
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500">{new Date(deal.createdAt).toLocaleDateString('pt-BR')}</span>
+                                <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                                  <Calendar size={10} /> {new Date(deal.createdAt).toLocaleDateString('pt-BR')}
+                                </span>
                               </div>
                             </div>
-                            <p className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">R$ {deal.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            <div className="text-right">
+                              <p className="font-black text-indigo-600 dark:text-indigo-400 text-base">R$ {deal.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </div>
                           </div>
                         );
                       })
                     ) : (
-                      <div className="text-center py-8">
-                        <p className="text-sm text-slate-400 italic">Nenhum negócio registrado.</p>
+                      <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nenhum negócio registrado</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Coluna 2: Faturas */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold mb-4">
-                    <div className="p-2 bg-green-600 rounded-lg text-white">
-                      <Receipt size={16} />
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-emerald-600 rounded-xl text-white shadow-lg shadow-emerald-200 dark:shadow-none">
+                        <Receipt size={18} />
+                      </div>
+                      <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Extrato Financeiro</h3>
                     </div>
-                    <h3>Histórico de Faturas</h3>
+                    <span className="text-[10px] font-black bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-lg uppercase tracking-widest">
+                      {invoices.filter(i => i.clientId === viewingClient.id).length} Total
+                    </span>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {invoices.filter(i => i.clientId === viewingClient.id).length > 0 ? (
                       invoices.filter(i => i.clientId === viewingClient.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(inv => (
-                        <div key={inv.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl flex items-center justify-between shadow-sm">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              {inv.invoiceNumber && <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{inv.invoiceNumber}</p>}
-                              {getInvoiceStatusBadge(inv.status)}
+                        <div key={inv.id} className="p-5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl flex items-center justify-between group transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:border-emerald-100 dark:hover:border-emerald-900/50">
+                          <div className="flex gap-4 items-center">
+                            <div className={`w-2 h-10 rounded-full ${inv.status === 'PAID' ? 'bg-emerald-500' : inv.status === 'PENDING' ? 'bg-amber-500' : 'bg-red-500'}`}></div>
+                            <div>
+                              <div className="flex items-center gap-3">
+                                {inv.invoiceNumber && <p className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">{inv.invoiceNumber}</p>}
+                                {getInvoiceStatusBadge(inv.status)}
+                              </div>
+                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                <Clock size={10} /> Vencimento: {new Date(inv.dueDate).toLocaleDateString('pt-BR')}
+                              </p>
                             </div>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Vencimento: {new Date(inv.dueDate).toLocaleDateString('pt-BR')}</p>
                           </div>
-                          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">R$ {inv.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                          <p className="font-black text-slate-900 dark:text-slate-50 text-base">R$ {inv.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-8">
-                        <p className="text-sm text-slate-400 italic">Nenhuma fatura gerada.</p>
+                      <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nenhuma fatura gerada</p>
                       </div>
                     )}
                   </div>
@@ -391,13 +405,14 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
 
               {/* Observações */}
               {viewingClient.observations && (
-                <div className="bg-amber-50 dark:bg-amber-900/10 p-6 rounded-3xl border border-amber-100 dark:border-amber-900/20 flex gap-4">
-                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-xl text-amber-600 dark:text-amber-400 h-fit">
-                    <AlertCircle size={20} />
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-amber-200/50 dark:border-amber-900/30 flex gap-5 relative overflow-hidden shadow-sm shadow-amber-100/50 dark:shadow-none">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                  <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-2xl text-amber-600 dark:text-amber-400 h-fit shrink-0 shadow-inner">
+                    <AlertCircle size={24} />
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-wider mb-1">Notas Internas</p>
-                    <p className="text-sm text-amber-800 dark:text-amber-200 italic leading-relaxed">{viewingClient.observations}</p>
+                  <div className="relative z-10">
+                    <p className="text-[10px] font-black text-amber-700 dark:text-amber-500 uppercase tracking-[0.2em] mb-3">Notas Estratégicas</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300 font-medium italic leading-relaxed whitespace-pre-wrap">{viewingClient.observations}</p>
                   </div>
                 </div>
               )}
@@ -406,87 +421,13 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
         </div>
       )}
 
-      {/* Modal Novo Cliente (Mantido) */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{editingClient ? 'Editar Cliente' : 'Novo Cliente'}</h2>
-              <button onClick={closeModal} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome Completo</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Ex: João Silva"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome da Empresa (Opcional)</label>
-                <input
-                  type="text"
-                  value={formData.companyName}
-                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Ex: Tech Solutions Ltda"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="email@exemplo.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">WhatsApp</label>
-                  <input
-                    type="text"
-                    value={formData.whatsapp}
-                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="(00) 00000-0000"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Observações</label>
-                <textarea
-                  rows={3}
-                  value={formData.observations}
-                  onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Detalhes adicionais sobre o cliente..."
-                ></textarea>
-              </div>
-            </div>
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-              <button
-                onClick={closeModal}
-                className="px-4 py-2 text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
-              >
-                Salvar Cliente
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Reutilizável de Cliente */}
+      <ClientModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSave={handleSave}
+        editingClient={editingClient}
+      />
     </div>
   );
 };

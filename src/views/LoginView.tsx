@@ -13,6 +13,26 @@ const LoginView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
 
+    const translateAuthError = (message: string) => {
+        const errors: { [key: string]: string } = {
+            'Invalid login credentials': 'Credenciais de login inválidas. Verifique seu email e senha.',
+            'Email not confirmed': 'Email não confirmado. Por favor, verifique sua caixa de entrada.',
+            'User already registered': 'Este email já está cadastrado.',
+            'Password should be at least 6 characters': 'A senha deve ter pelo menos 6 caracteres.',
+            'Invalid email': 'O email inserido é inválido.',
+            'User not found': 'Usuário não encontrado.',
+            'Password recovery requires an email': 'A recuperação de senha requer um email.',
+            'Too many requests': 'Muitas solicitações. Tente novamente mais tarde.',
+            'New password should be different from the old password': 'A nova senha deve ser diferente da antiga.'
+        };
+
+        for (const [key, value] of Object.entries(errors)) {
+            if (message.includes(key)) return value;
+        }
+
+        return message || 'Ocorreu um erro inesperado.';
+    };
+
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -38,10 +58,10 @@ const LoginView: React.FC = () => {
                     }
                 });
                 if (error) throw error;
-                setMessage('Conta criada com sucesso! Verifique seu email se necessário.');
+                setMessage('Conta criada com sucesso! Verifique seu email para confirmar o cadastro.');
             }
         } catch (err: any) {
-            setError(err.message);
+            setError(translateAuthError(err.message));
         } finally {
             setLoading(false);
         }
@@ -62,7 +82,7 @@ const LoginView: React.FC = () => {
             if (error) throw error;
             setMessage('Email de redefinição enviado com sucesso!');
         } catch (err: any) {
-            setError(err.message);
+            setError(translateAuthError(err.message));
         } finally {
             setLoading(false);
         }

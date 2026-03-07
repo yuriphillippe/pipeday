@@ -4,6 +4,7 @@ import { Plus, Trash2, X, ArrowRight, Flame, Snowflake, ThermometerSun } from 'l
 import { Deal, Stage } from '../types';
 import { STAGES } from '../constants';
 import { useData } from '../src/context/DataContext';
+import ClientModal from '../src/components/ClientModal';
 
 interface FunnelViewProps {
   isDarkMode: boolean;
@@ -14,7 +15,6 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
   const { deals, clients, services, addDeal, updateDeal, deleteDeal: contextDeleteDeal, addInvoice, addClient } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [newClient, setNewClient] = useState({ name: '', email: '', whatsapp: '' });
   const [newDeal, setNewDeal] = useState<{
     clientId: string;
     serviceId: string;
@@ -118,24 +118,6 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-  };
-
-  const handleCreateClient = async () => {
-    if (!newClient.name) return;
-    try {
-      await addClient({
-        name: newClient.name,
-        email: newClient.email,
-        whatsapp: newClient.whatsapp,
-        companyName: '',
-        observations: 'Cadastrado via Funil de Vendas'
-      });
-      setIsClientModalOpen(false);
-      setNewClient({ name: '', email: '', whatsapp: '' });
-    } catch (err) {
-      console.error("Failed to create client", err);
-      alert("Erro ao criar cliente.");
-    }
   };
 
   const handleCreateDeal = async () => {
@@ -385,60 +367,18 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
         </div>
       )}
 
-      {/* Modal Novo Cliente */}
-      {isClientModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Novo Cliente</h2>
-              <button onClick={() => setIsClientModalOpen(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome</label>
-                <input
-                  type="text"
-                  value={newClient.name}
-                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Nome do cliente"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</label>
-                <input
-                  type="email"
-                  value={newClient.email}
-                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Email"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">WhatsApp</label>
-                <input
-                  type="text"
-                  value={newClient.whatsapp}
-                  onChange={(e) => setNewClient({ ...newClient, whatsapp: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="WhatsApp"
-                />
-              </div>
-            </div>
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-              <button onClick={() => setIsClientModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400">Cancelar</button>
-              <button
-                onClick={handleCreateClient}
-                className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg"
-              >
-                Cadastrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Reutilizável de Cliente */}
+      <ClientModal
+        isOpen={isClientModalOpen}
+        onClose={() => setIsClientModalOpen(false)}
+        onSave={async (formData) => {
+          await addClient({
+            ...formData,
+            observations: formData.observations || 'Cadastrado via Funil de Vendas'
+          });
+          setIsClientModalOpen(false);
+        }}
+      />
 
       {/* Modal Decisão Fechado/Perdido */}
       {decisionModal.isOpen && (
