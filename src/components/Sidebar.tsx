@@ -77,83 +77,92 @@ export const Sidebar: React.FC<SidebarProps> = ({
     userEmail
 }) => {
     return (
-        <aside
-            className={`${isSidebarOpen ? 'w-64' : 'w-20'
-                } bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 flex flex-col z-50`}
-        >
-            <div className="p-6 flex items-center gap-2 overflow-hidden">
-                <div className="text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                    <PipedayLogo className="w-8 h-8" />
-                </div>
-                {isSidebarOpen && <span className="font-bold text-2xl text-[#2d2a8a] dark:text-indigo-300 tracking-tight">Pipeday</span>}
-            </div>
-
-            <nav className="flex-1 px-4 space-y-2 py-4 overflow-y-auto">
-                <SidebarItem
-                    icon={LayoutDashboard}
-                    label={isSidebarOpen ? "Dashboard" : ""}
-                    active={activeTab === 'dashboard'}
-                    onClick={() => setActiveTab('dashboard')}
+        <>
+            {/* Overlay for mobile */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
                 />
-                <SidebarItem
-                    icon={KanbanSquare}
-                    label={isSidebarOpen ? "Funil de Vendas" : ""}
-                    active={activeTab === 'funnel'}
-                    onClick={() => setActiveTab('funnel')}
-                />
-                <SidebarItem
-                    icon={Users}
-                    label={isSidebarOpen ? "Clientes" : ""}
-                    active={activeTab === 'crm'}
-                    onClick={() => setActiveTab('crm')}
-                />
-                <SidebarItem
-                    icon={Briefcase}
-                    label={isSidebarOpen ? "Serviços" : ""}
-                    active={activeTab === 'services'}
-                    onClick={() => setActiveTab('services')}
-                />
-                <SidebarItem
-                    icon={Receipt}
-                    label={isSidebarOpen ? "Financeiro" : ""}
-                    active={activeTab === 'invoices'}
-                    onClick={() => setActiveTab('invoices')}
-                />
-                <SidebarItem
-                    icon={Settings}
-                    label={isSidebarOpen ? "Configurações" : ""}
-                    active={activeTab === 'settings'}
-                    onClick={() => setActiveTab('settings')}
-                />
-            </nav>
-
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-                <button
-                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
-                >
-                    {isSidebarOpen ? (
-                        <div className="flex items-center gap-2">
-                            <ChevronLeft size={20} />
-                            <span className="font-medium">Recolher</span>
-                        </div>
-                    ) : (
-                        <ChevronRight size={20} />
-                    )}
-                </button>
-
-                {isSidebarOpen && (
-                    <div className="mt-4 flex items-center gap-3 px-2">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-700 dark:text-indigo-400 font-bold flex-shrink-0">
-                            {userEmail ? userEmail.substring(0, 2).toUpperCase() : 'AD'}
-                        </div>
-                        <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{userEmail || 'Admin User'}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Plano Pro</p>
-                        </div>
+            )}
+            <aside
+                className={`fixed lg:static inset-y-0 left-0 z-50 ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0 w-20'
+                    } bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 flex flex-col`}
+            >
+                <div className="p-6 flex items-center gap-2 overflow-hidden">
+                    <div className="text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+                        <PipedayLogo className="w-8 h-8" />
                     </div>
-                )}
-            </div>
-        </aside>
+                    {isSidebarOpen && <span className="font-bold text-2xl text-[#2d2a8a] dark:text-indigo-300 tracking-tight">Pipeday</span>}
+                </div>
+
+                <nav className="flex-1 px-4 space-y-2 py-4 overflow-y-auto">
+                    <SidebarItem
+                        icon={LayoutDashboard}
+                        label={isSidebarOpen ? "Dashboard" : ""}
+                        active={activeTab === 'dashboard'}
+                        onClick={() => setActiveTab('dashboard')}
+                    />
+                    <SidebarItem
+                        icon={KanbanSquare}
+                        label={isSidebarOpen ? "Funil de Vendas" : ""}
+                        active={activeTab === 'funnel'}
+                        onClick={() => setActiveTab('funnel')}
+                    />
+                    <SidebarItem
+                        icon={Users}
+                        label={isSidebarOpen ? "Clientes" : ""}
+                        active={activeTab === 'crm'}
+                        onClick={() => setActiveTab('crm')}
+                    />
+                    <SidebarItem
+                        icon={Briefcase}
+                        label={isSidebarOpen ? "Serviços" : ""}
+                        active={activeTab === 'services'}
+                        onClick={() => setActiveTab('services')}
+                    />
+                    <SidebarItem
+                        icon={Receipt}
+                        label={isSidebarOpen ? "Financeiro" : ""}
+                        active={activeTab === 'invoices'}
+                        onClick={() => setActiveTab('invoices')}
+                    />
+                    <SidebarItem
+                        icon={Settings}
+                        label={isSidebarOpen ? "Configurações" : ""}
+                        active={activeTab === 'settings'}
+                        onClick={() => setActiveTab('settings')}
+                    />
+                </nav>
+
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+                    >
+                        {isSidebarOpen ? (
+                            <div className="flex items-center gap-2">
+                                <ChevronLeft size={20} />
+                                <span className="font-medium">Recolher</span>
+                            </div>
+                        ) : (
+                            <ChevronRight size={20} />
+                        )}
+                    </button>
+
+                    {isSidebarOpen && (
+                        <div className="mt-4 flex items-center gap-3 px-2">
+                            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-700 dark:text-indigo-400 font-bold flex-shrink-0">
+                                {userEmail ? userEmail.substring(0, 2).toUpperCase() : 'AD'}
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{userEmail || 'Admin User'}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Plano Pro</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </aside>
+        </>
     );
 };

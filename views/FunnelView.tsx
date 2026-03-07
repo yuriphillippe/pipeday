@@ -155,21 +155,21 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
 
   return (
     <div className="h-full flex flex-col space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Funil de Vendas</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50">Funil de Vendas</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">Gerencie o progresso das suas negociações.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button
             onClick={() => setIsClientModalOpen(true)}
-            className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg font-medium border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            className="w-full sm:w-auto bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm text-sm"
           >
             Novo Cliente
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-sm"
+            className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors shadow-md text-sm"
           >
             <Plus size={18} />
             Novo Negócio

@@ -20,7 +20,7 @@ const AppContent: React.FC = () => {
   const { loading: dataLoading } = useData();
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'crm' | 'funnel' | 'services' | 'invoices' | 'settings'>('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('pipeday_theme');
     return saved === 'dark';
@@ -55,19 +55,23 @@ const AppContent: React.FC = () => {
   // EXCEPT DashboardView might still need some props if we don't update it yet.
   // To avoid breaking, we will update views to be compatible.
 
+  const handleTabChange = (tab: any) => {
+    setActiveTab(tab);
+    if (window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
+  };
+
   const renderContent = () => {
     const commonProps = { isDarkMode };
     switch (activeTab) {
-      // We will update these components to no longer require data props, or ignore the ones passed if they use context
-      // But initially, they require props. Typescript will complain if we don't pass them or if we pass them and they don't exist.
-      // So we MUST refactor the views to use Context.
-      case 'dashboard': return <DashboardView {...commonProps} searchQuery={searchQuery} setActiveTab={setActiveTab} />;
+      case 'dashboard': return <DashboardView {...commonProps} searchQuery={searchQuery} setActiveTab={handleTabChange} />;
       case 'crm': return <CRMView {...commonProps} searchQuery={searchQuery} />;
       case 'funnel': return <FunnelView {...commonProps} searchQuery={searchQuery} />;
       case 'services': return <ServicesView {...commonProps} searchQuery={searchQuery} />;
       case 'invoices': return <InvoicesView {...commonProps} searchQuery={searchQuery} />;
       case 'settings': return <SettingsView isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />;
-      default: return <DashboardView {...commonProps} />;
+      default: return <DashboardView {...commonProps} setActiveTab={handleTabChange} />;
     }
   };
 
@@ -75,7 +79,7 @@ const AppContent: React.FC = () => {
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         userEmail={user.email}
@@ -88,6 +92,7 @@ const AppContent: React.FC = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onLogout={signOut}
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 relative">

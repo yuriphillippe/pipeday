@@ -108,19 +108,19 @@ const InvoicesView: React.FC<InvoicesViewProps> = ({ isDarkMode, searchQuery }) 
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Financeiro</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Gere cobranças via Pix e controle seus recebimentos.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50">Financeiro</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">Gere cobranças via Pix e controle seus recebimentos.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+            className="w-full sm:w-auto px-4 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-bold shadow-sm"
           >
-            <option value="ALL">Todos</option>
+            <option value="ALL">Todos Status</option>
             <option value="PENDING">Pendente</option>
             <option value="PAID">Pago</option>
             <option value="EXPIRED">Vencido</option>
@@ -128,7 +128,7 @@ const InvoicesView: React.FC<InvoicesViewProps> = ({ isDarkMode, searchQuery }) 
           </select>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-sm"
+            className="w-full sm:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-md active:scale-95"
           >
             <Plus size={18} />
             Nova Fatura

@@ -165,14 +165,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">{getGreeting()}, {userProfile.name}!</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Aqui está o que está acontecendo no seu negócio hoje.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50">{getGreeting()}, {userProfile.name}!</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm sm:text-base">Aqui está o que está acontecendo no seu negócio hoje.</p>
         </div>
-        <div className="flex gap-2">
-          <div className="bg-white dark:bg-slate-900 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 dark:text-slate-400">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <div className="bg-white dark:bg-slate-900 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 dark:text-slate-400 w-full sm:w-auto text-center">
             Últimos 30 dias
           </div>
         </div>

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search, Sun, Moon, Bell, BrainCircuit, LogOut } from 'lucide-react';
+import { Search, Sun, Moon, Bell, BrainCircuit, LogOut, Menu } from 'lucide-react';
 
 interface HeaderProps {
     isDarkMode: boolean;
@@ -8,6 +8,7 @@ interface HeaderProps {
     searchQuery: string;
     setSearchQuery: (query: string) => void;
     onLogout: () => void;
+    toggleSidebar: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -15,19 +16,28 @@ export const Header: React.FC<HeaderProps> = ({
     setIsDarkMode,
     searchQuery,
     setSearchQuery,
-    onLogout
+    onLogout,
+    toggleSidebar
 }) => {
     return (
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 shrink-0">
-            <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full w-full max-w-md">
-                <Search size={18} className="text-slate-400 dark:text-slate-500" />
-                <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar por clientes, negócios..."
-                    className="bg-transparent border-none focus:outline-none text-sm text-slate-600 dark:text-slate-300 w-full"
-                />
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-8 shrink-0">
+            <div className="flex items-center gap-3 w-full max-w-md">
+                <button
+                    onClick={toggleSidebar}
+                    className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg lg:hidden"
+                >
+                    <Menu size={20} />
+                </button>
+                <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full flex-1">
+                    <Search size={18} className="text-slate-400 dark:text-slate-500" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Buscar..."
+                        className="bg-transparent border-none focus:outline-none text-sm text-slate-600 dark:text-slate-300 w-full"
+                    />
+                </div>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4 ml-4">

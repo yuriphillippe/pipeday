@@ -89,9 +89,9 @@ const LoginView: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-md p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800">
-                <div className="text-center mb-8">
+        <div className="h-[100dvh] w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 sm:p-8 overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 max-h-full overflow-y-auto custom-scrollbar">
+                <div className="text-center mb-6 sm:mb-8">
                     <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-indigo-600/20">
                         <svg viewBox="0 0 100 100" className="w-10 h-10 text-white" fill="currentColor">
                             <path d="M25 15V85H40V65C40 65 65 65 65 40C65 15 40 15 40 15H25ZM40 30H45C45 30 50 30 50 40C50 50 45 50 45 50H40V30Z" />
