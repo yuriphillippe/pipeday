@@ -301,11 +301,11 @@ const InvoicesView: React.FC<InvoicesViewProps> = ({ isDarkMode, searchQuery }) 
                   </div>
                 </div>
               </div>
-              <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-                <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Cancelar</button>
+              <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row justify-end gap-3">
+                <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg order-2 sm:order-1">Cancelar</button>
                 <button
                   onClick={handleCreateInvoice}
-                  className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95 order-1 sm:order-2"
                 >
                   Gerar Cobrança
                 </button>

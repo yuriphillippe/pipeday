@@ -354,11 +354,16 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
                 />
               </div>
             </div>
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-              <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400">Cancelar</button>
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row justify-end gap-3">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg order-2 sm:order-1"
+              >
+                Cancelar
+              </button>
               <button
                 onClick={handleCreateDeal}
-                className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
+                className="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95 order-1 sm:order-2"
               >
                 Criar Negócio
               </button>
@@ -387,16 +392,16 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Finalizar Negociação</h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">O negócio foi fechado com sucesso ou perdido?</p>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => handleStageDecision('LOST')}
-                className="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-colors border border-red-100"
+                className="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-colors border border-red-100 active:scale-95"
               >
                 Perdido
               </button>
               <button
                 onClick={() => handleStageDecision('CLOSED')}
-                className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 transition-colors flex flex-col items-center justify-center gap-0.5"
+                className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none transition-colors flex flex-col items-center justify-center gap-0.5 active:scale-95"
               >
                 <span>Fechado</span>
                 <span className="text-[10px] font-normal opacity-90">(Gerar Fatura)</span>

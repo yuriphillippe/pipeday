@@ -105,12 +105,18 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50 italic">Gerenciamento de Clientes</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Organize sua base de contatos e visualize históricos.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50 italic flex items-center gap-3">
+            <Users className="text-indigo-600 dark:text-indigo-400" size={28} />
+            Gerenciamento de Clientes
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">Organize sua base de contatos e visualize históricos.</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-sm"
+          onClick={() => {
+            setEditingClient(null);
+            setIsModalOpen(true);
+          }}
+          className="w-full sm:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-md active:scale-95 text-sm sm:text-base"
         >
           <UserPlus size={18} />
           Novo Cliente
