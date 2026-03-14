@@ -24,6 +24,11 @@ interface DashboardViewProps {
 const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery = '', setActiveTab }) => {
   const { clients, deals, invoices, userProfile } = useData();
 
+  const MEI_LIMIT = 81000;
+  const MEI_ALERT_LEVEL_1 = MEI_LIMIT * 0.6; // 48.600
+  const MEI_ALERT_LEVEL_2 = MEI_LIMIT * 0.8; // 64.800
+  const MEI_ALERT_LEVEL_3 = MEI_LIMIT * 0.95; // 76.950
+
   // Global Search Logic
   const searchResults = useMemo(() => {
     if (!searchQuery) return { clients: [], deals: [] };
@@ -66,7 +71,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
       new Date(d.createdAt) < fortyEightHoursAgo
     ).length;
 
-    return { receivedThisMonth, pendingAmount, expiredCount, activeClients, lostCount, staleDealsCount, lostAmount };
+    // MEI limit calc
+    const currentYear = new Date().getFullYear();
+    const annualRevenue = invoices.filter(inv => {
+         if (inv.status !== 'PAID') return false;
+         const invDate = inv.createdAt && !isNaN(new Date(inv.createdAt).getTime()) ? new Date(inv.createdAt) : null;
+         return invDate && invDate.getFullYear() === currentYear;
+    }).reduce((acc, curr) => acc + curr.value, 0);
+
+    return { receivedThisMonth, pendingAmount, expiredCount, activeClients, lostCount, staleDealsCount, lostAmount, annualRevenue };
   }, [clients, invoices, deals]);
 
   const chartData = [
@@ -74,6 +87,22 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
     { name: 'Pendente', Valor: stats.pendingAmount, color: isDarkMode ? '#fbbf24' : '#f59e0b' },
     { name: 'Perdido', Valor: stats.lostAmount, color: isDarkMode ? '#f87171' : '#ef4444' },
   ];
+
+  const getAlertStatus = (revenue: number) => {
+    if (revenue >= MEI_ALERT_LEVEL_3) {
+        return { level: 3, label: '🔴 Risco', message: 'Risco de ultrapassar o limite.', color: 'text-red-600', bg: 'bg-red-500' };
+    }
+    if (revenue >= MEI_ALERT_LEVEL_2) {
+        return { level: 2, label: '🟡 Alerta', message: 'Próximo do limite anual.', color: 'text-amber-600', bg: 'bg-amber-500' };
+    }
+    if (revenue >= MEI_ALERT_LEVEL_1) {
+        return { level: 1, label: '🟢 Atenção', message: '60% do limite atingido.', color: 'text-emerald-600', bg: 'bg-emerald-500' };
+    }
+    return { level: 0, label: '🟢 Seguro', message: 'Dentro do limite seguro.', color: 'text-indigo-600', bg: 'bg-indigo-500' };
+  };
+
+  const meiAlert = getAlertStatus(stats.annualRevenue);
+  const meiProgress = Math.min((stats.annualRevenue / MEI_LIMIT) * 100, 100);
 
   const StatCard = ({ title, value, icon: Icon, trend, colorClass, darkColorClass, isCurrency }: any) => (
     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
@@ -251,6 +280,43 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
           </div>
         </div>
 
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-6">
+           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Limite MEI (Anual)</h3>
+           
+           <div>
+               <div className="flex justify-between items-end mb-2">
+                   <p className="text-2xl font-black text-slate-900 dark:text-slate-50">
+                       R$ {stats.annualRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                   </p>
+                   <p className="text-sm font-medium text-slate-400">/ R$ {MEI_LIMIT.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+               </div>
+               
+               <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
+                   <div 
+                       className={`h-full transition-all duration-1000 ease-out ${meiAlert.bg}`}
+                       style={{ width: `${meiProgress}%` }}
+                   ></div>
+               </div>
+               
+               <div className="flex justify-between items-center mt-3">
+                   <div className="flex items-center gap-1.5">
+                       <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Status: {meiAlert.label}</span>
+                   </div>
+                   <span className="text-xs font-black text-slate-500">{meiProgress.toFixed(1)}%</span>
+               </div>
+               <p className="text-xs text-slate-500 mt-1">{meiAlert.message}</p>
+           </div>
+           
+           <button 
+                onClick={() => setActiveTab('fiscal')}
+                className="w-full mt-auto bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-bold py-2.5 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors text-sm"
+           >
+               Ver Relatório Completo
+           </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Alertas Rápidos</h3>
           <div className="space-y-4">

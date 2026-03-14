@@ -10,6 +10,7 @@ import {
   Trash2,
   Edit,
   UserPlus,
+  Users,
   X,
   History,
   Briefcase,
@@ -38,13 +39,13 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
 
   const filteredClients = clients.filter(c => {
-    const term = searchQuery.toLowerCase();
+    const term = (searchQuery || '').toLowerCase();
 
     return (
-      c.name?.toLowerCase().includes(term) ||
-      c.email?.toLowerCase().includes(term) ||
-      c.whatsapp?.toLowerCase().includes(term) ||
-      (c.observations?.toLowerCase().includes(term))
+      (c.name || '').toLowerCase().includes(term) ||
+      (c.email || '').toLowerCase().includes(term) ||
+      (c.whatsapp || '').toLowerCase().includes(term) ||
+      (c.observations || '').toLowerCase().includes(term)
     );
   });
 
@@ -158,7 +159,7 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-700">
-                          {client.name.charAt(0)}
+                          {client.name ? client.name.charAt(0).toUpperCase() : '?'}
                         </div>
                         <button
                           onClick={() => setViewingClient(client)}
@@ -195,7 +196,7 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                         <Calendar size={14} className="text-slate-400 dark:text-slate-500" />
-                        {new Date(client.createdAt).toLocaleDateString('pt-BR')}
+                        {client.createdAt && !isNaN(new Date(client.createdAt).getTime()) ? new Date(client.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -260,10 +261,10 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
               <div className="flex items-center gap-5 relative z-10">
                 <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl font-black border border-white/20 shadow-inner">
-                  {viewingClient.name.charAt(0)}
+                  {viewingClient.name ? viewingClient.name.charAt(0).toUpperCase() : '?'}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black tracking-tight">{viewingClient.name}</h2>
+                  <h2 className="text-2xl font-black tracking-tight">{viewingClient.name || 'Cliente Sem Nome'}</h2>
                   {viewingClient.companyName && <p className="text-indigo-100 text-sm font-bold flex items-center gap-1.5 mt-0.5 opacity-90"><Briefcase size={14} /> {viewingClient.companyName}</p>}
                   <div className="flex items-center gap-4 mt-2">
                     <span className="text-indigo-50 text-xs font-medium flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-lg"><Mail size={12} /> {viewingClient.email}</span>
@@ -316,9 +317,9 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Início da Parceria</p>
                   </div>
                   <p className="text-3xl font-black text-slate-900 dark:text-slate-50">
-                    {new Date(viewingClient.createdAt).toLocaleDateString('pt-BR', { year: 'numeric', month: 'short' })}
+                    {viewingClient.createdAt && !isNaN(new Date(viewingClient.createdAt).getTime()) ? new Date(viewingClient.createdAt).toLocaleDateString('pt-BR', { year: 'numeric', month: 'short' }) : 'N/A'}
                   </p>
-                  <p className="text-[10px] font-bold text-slate-400 mt-2">Cadastrado em {new Date(viewingClient.createdAt).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-[10px] font-bold text-slate-400 mt-2">{viewingClient.createdAt && !isNaN(new Date(viewingClient.createdAt).getTime()) ? `Cadastrado em ${new Date(viewingClient.createdAt).toLocaleDateString('pt-BR')}` : 'Data não disponível'}</p>
                 </div>
               </div>
 
@@ -350,7 +351,7 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
                                   {stageInfo?.label}
                                 </span>
                                 <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-slate-500">
-                                  <Calendar size={10} /> {new Date(deal.createdAt).toLocaleDateString('pt-BR')}
+                                  <Calendar size={10} /> {deal.createdAt && !isNaN(new Date(deal.createdAt).getTime()) ? new Date(deal.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
                                 </span>
                               </div>
                             </div>
@@ -383,7 +384,11 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
                   </div>
                   <div className="space-y-4">
                     {invoices.filter(i => i.clientId === viewingClient.id).length > 0 ? (
-                      invoices.filter(i => i.clientId === viewingClient.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(inv => (
+                      invoices.filter(i => i.clientId === viewingClient.id).sort((a, b) => {
+                        const dateA = a.createdAt && !isNaN(new Date(a.createdAt).getTime()) ? new Date(a.createdAt).getTime() : 0;
+                        const dateB = b.createdAt && !isNaN(new Date(b.createdAt).getTime()) ? new Date(b.createdAt).getTime() : 0;
+                        return dateB - dateA;
+                      }).map(inv => (
                         <div key={inv.id} className="p-5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl flex items-center justify-between group transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:border-emerald-100 dark:hover:border-emerald-900/50">
                           <div className="flex gap-4 items-center">
                             <div className={`w-2 h-10 rounded-full ${inv.status === 'PAID' ? 'bg-emerald-500' : inv.status === 'PENDING' ? 'bg-amber-500' : 'bg-red-500'}`}></div>
@@ -393,7 +398,7 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
                                 {getInvoiceStatusBadge(inv.status)}
                               </div>
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
-                                <Clock size={10} /> Vencimento: {new Date(inv.dueDate).toLocaleDateString('pt-BR')}
+                                <Clock size={10} /> Vencimento: {inv.dueDate && !isNaN(new Date(inv.dueDate).getTime()) ? new Date(inv.dueDate).toLocaleDateString('pt-BR') : 'N/A'}
                               </p>
                             </div>
                           </div>

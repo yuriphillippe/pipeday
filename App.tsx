@@ -13,13 +13,14 @@ import FunnelView from './views/FunnelView';
 import ServicesView from './views/ServicesView';
 import InvoicesView from './views/InvoicesView';
 import SettingsView from './views/SettingsView';
+import FiscalView from './src/views/FiscalView';
 import { Loader2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const { loading: dataLoading } = useData();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'crm' | 'funnel' | 'services' | 'invoices' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'crm' | 'funnel' | 'services' | 'invoices' | 'settings' | 'fiscal'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('pipeday_theme');
@@ -71,6 +72,7 @@ const AppContent: React.FC = () => {
       case 'services': return <ServicesView {...commonProps} searchQuery={searchQuery} />;
       case 'invoices': return <InvoicesView {...commonProps} searchQuery={searchQuery} />;
       case 'settings': return <SettingsView isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />;
+      case 'fiscal': return <FiscalView isDarkMode={isDarkMode} />;
       default: return <DashboardView {...commonProps} setActiveTab={handleTabChange} />;
     }
   };

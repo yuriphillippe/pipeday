@@ -9,7 +9,8 @@ import {
     Settings,
     Menu,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    BarChart4
 } from 'lucide-react';
 
 const SidebarItem = ({
@@ -126,6 +127,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         label={isSidebarOpen ? "Financeiro" : ""}
                         active={activeTab === 'invoices'}
                         onClick={() => setActiveTab('invoices')}
+                    />
+                    <SidebarItem
+                        icon={BarChart4}
+                        label={isSidebarOpen ? "Fiscal / Contábil" : ""}
+                        active={activeTab === 'fiscal'}
+                        onClick={() => setActiveTab('fiscal')}
                     />
                     <SidebarItem
                         icon={Settings}
