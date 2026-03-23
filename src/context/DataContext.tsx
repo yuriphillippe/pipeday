@@ -12,6 +12,7 @@ type DataContextType = {
     loading: boolean;
     refreshData: () => Promise<void>;
     addClient: (client: Omit<Client, 'id' | 'createdAt'>) => Promise<any>;
+    importClients: (clients: Omit<Client, 'id' | 'createdAt'>[]) => Promise<any>;
     addService: (service: Omit<Service, 'id'>) => Promise<any>;
     addDeal: (deal: Omit<Deal, 'id' | 'createdAt'>) => Promise<any>;
     addInvoice: (invoice: Omit<Invoice, 'id' | 'createdAt'>) => Promise<any>;
@@ -36,6 +37,7 @@ const DataContext = createContext<DataContextType>({
     loading: true,
     refreshData: async () => { },
     addClient: async () => { },
+    importClients: async () => { },
     addService: async () => { },
     addDeal: async () => { },
     addInvoice: async () => { },
@@ -142,6 +144,22 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
             company_name: client.companyName,
             observations: client.observations,
         }]);
+        if (error) throw error;
+        await refreshData();
+    };
+
+    const importClients = async (newClients: Omit<Client, 'id' | 'createdAt'>[]) => {
+        if (!newClients.length) return;
+        
+        const mappedClients = newClients.map(c => ({
+            name: c.name,
+            email: c.email || null,
+            whatsapp: c.whatsapp || null,
+            company_name: c.companyName || null,
+            observations: c.observations || null,
+        }));
+
+        const { error } = await supabase.from('clients').insert(mappedClients);
         if (error) throw error;
         await refreshData();
     };
@@ -293,7 +311,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     return (
         <DataContext.Provider value={{
             clients, services, deals, invoices, loading, refreshData,
-            addClient, updateClient, deleteClient,
+            addClient, importClients, updateClient, deleteClient,
             addService, updateService, deleteService,
             addDeal, updateDeal, deleteDeal,
             addInvoice, updateInvoice, deleteInvoice,

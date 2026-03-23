@@ -18,7 +18,9 @@ import {
   CheckCircle,
   AlertCircle,
   Search,
-  Clock
+  Clock,
+  Download,
+  Upload
 } from 'lucide-react';
 import { Client } from '../types';
 import { STAGES } from '../constants';
@@ -33,7 +35,7 @@ interface CRMViewProps {
 }
 
 const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
-  const { clients, invoices, deals, services, addClient, updateClient, deleteClient } = useData();
+  const { clients, invoices, deals, services, addClient, importClients, updateClient, deleteClient } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
@@ -93,6 +95,105 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
     }
   };
 
+  const handleExportCsv = () => {
+    const headers = ['Nome', 'Email', 'WhatsApp', 'Nome da Empresa', 'Observações'];
+    const rows = clients.map(client => [
+      `"${client.name || ''}"`,
+      `"${client.email || ''}"`,
+      `"${client.whatsapp || ''}"`,
+      `"${client.companyName || ''}"`,
+      `"${(client.observations || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'clientes.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const text = e.target?.result as string;
+      if (!text) return;
+
+      const lines = text.split('\\n');
+      if (lines.length < 2) {
+        alert('Arquivo CSV vazio ou inválido.');
+        return;
+      }
+
+      const newClients: Omit<Client, 'id' | 'createdAt'>[] = [];
+      let skipped = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const cols = [];
+        let cur = '';
+        let inQuotes = false;
+        for (let j = 0; j < line.length; j++) {
+           if (line[j] === '"') inQuotes = !inQuotes;
+           else if (line[j] === ',' && !inQuotes) { cols.push(cur); cur = ''; }
+           else cur += line[j];
+        }
+        cols.push(cur);
+
+        const name = cols[0]?.replace(/^"|"$/g, '').trim() || '';
+        const email = cols[1]?.replace(/^"|"$/g, '').trim() || '';
+        const whatsapp = cols[2]?.replace(/^"|"$/g, '').trim() || '';
+        const companyName = cols[3]?.replace(/^"|"$/g, '').trim() || '';
+        const observations = cols[4]?.replace(/^"|"$/g, '').trim() || '';
+
+        if (!name) {
+          skipped++;
+          continue;
+        }
+
+        const isDuplicate = clients.some(c => 
+          (email && c.email?.toLowerCase() === email.toLowerCase()) || 
+          (whatsapp && c.whatsapp === whatsapp)
+        );
+
+        if (isDuplicate) {
+          skipped++;
+          continue;
+        }
+
+        newClients.push({
+          name,
+          email,
+          whatsapp,
+          companyName,
+          observations
+        });
+      }
+
+      if (newClients.length > 0) {
+        try {
+          await importClients(newClients);
+          alert(`Importação concluída! ${newClients.length} clientes adicionados. ${skipped > 0 ? skipped + ' ignorados (duplicados ou inválidos).' : ''}`);
+        } catch (error) {
+          console.error('Erro ao importar:', error);
+          alert('Erro ao importar clientes. Verifique o console.');
+        }
+      } else {
+        alert(`Nenhum cliente novo foi importado. ${skipped} clientes foram ignorados por estarem duplicados ou com dados inválidos.`);
+      }
+
+      event.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
   const getInvoiceStatusBadge = (status: any) => {
     switch (status) {
       case 'PAID': return <span className="bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full text-[10px] font-bold">Pago</span>;
@@ -112,16 +213,33 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">Organize sua base de contatos e visualize históricos.</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingClient(null);
-            setIsModalOpen(true);
-          }}
-          className="w-full sm:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-md active:scale-95 text-sm sm:text-base"
-        >
-          <UserPlus size={18} />
-          Novo Cliente
-        </button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleExportCsv}
+            className="flex-1 sm:flex-none bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm active:scale-95 text-sm sm:text-base"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">Exportar</span>
+          </button>
+          
+          <label className="flex-1 sm:flex-none cursor-pointer bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm active:scale-95 text-sm sm:text-base">
+            <Upload size={18} />
+            <span className="hidden sm:inline">Importar</span>
+            <input type="file" accept=".csv" className="hidden" onChange={handleImportCsv} />
+          </label>
+
+          <button
+            onClick={() => {
+              setEditingClient(null);
+              setIsModalOpen(true);
+            }}
+            className="w-full sm:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-md active:scale-95 text-sm sm:text-base"
+          >
+            <UserPlus size={18} />
+            <span className="hidden sm:inline">Novo Cliente</span>
+            <span className="sm:hidden">Novo</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
