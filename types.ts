@@ -44,9 +44,20 @@ export type Invoice = {
   createdAt: string;
 };
 
+export type Expense = {
+  id: string;
+  userId?: string;
+  category: string;
+  description?: string;
+  value: number;
+  date: string;
+  createdAt: string;
+};
+
 export type AppState = {
   clients: Client[];
   services: Service[];
   deals: Deal[];
   invoices: Invoice[];
+  expenses: Expense[];
 };

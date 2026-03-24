@@ -9,7 +9,9 @@ import {
   ArrowDownRight,
   Search,
   Briefcase,
-  XCircle
+  XCircle,
+  TrendingDown,
+  Wallet
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useData } from '../src/context/DataContext';
@@ -22,7 +24,7 @@ interface DashboardViewProps {
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery = '', setActiveTab }) => {
-  const { clients, deals, invoices, userProfile } = useData();
+  const { clients, deals, invoices, expenses, userProfile } = useData();
 
   const MEI_LIMIT = 81000;
   const MEI_ALERT_LEVEL_1 = MEI_LIMIT * 0.6; // 48.600
@@ -48,8 +50,40 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
   }, [searchQuery, clients, deals]);
 
   const stats = useMemo(() => {
+    // Dates for current and last month
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
+    const lastMonth = lastMonthDate.getMonth();
+    const lastMonthYear = lastMonthDate.getFullYear();
+
+    const isCurrentMonth = (dateStr: string) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return !isNaN(d.getTime()) && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    };
+    
+    const isLastMonth = (dateStr: string) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return !isNaN(d.getTime()) && d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+    };
+
     const receivedThisMonth = invoices
-      .filter(i => i.status === 'PAID')
+      .filter(i => i.status === 'PAID' && isCurrentMonth(i.createdAt))
+      .reduce((acc, curr) => acc + curr.value, 0);
+
+    const receivedLastMonth = invoices
+      .filter(i => i.status === 'PAID' && isLastMonth(i.createdAt))
+      .reduce((acc, curr) => acc + curr.value, 0);
+
+    const expensesThisMonth = expenses
+      .filter(e => isCurrentMonth(e.date))
+      .reduce((acc, curr) => acc + curr.value, 0);
+
+    const expensesLastMonth = expenses
+      .filter(e => isLastMonth(e.date))
       .reduce((acc, curr) => acc + curr.value, 0);
 
     const pendingAmount = invoices
@@ -72,20 +106,51 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
     ).length;
 
     // MEI limit calc
-    const currentYear = new Date().getFullYear();
     const annualRevenue = invoices.filter(inv => {
          if (inv.status !== 'PAID') return false;
          const invDate = inv.createdAt && !isNaN(new Date(inv.createdAt).getTime()) ? new Date(inv.createdAt) : null;
          return invDate && invDate.getFullYear() === currentYear;
     }).reduce((acc, curr) => acc + curr.value, 0);
 
-    return { receivedThisMonth, pendingAmount, expiredCount, activeClients, lostCount, staleDealsCount, lostAmount, annualRevenue };
-  }, [clients, invoices, deals]);
+    // Smart Insights
+    const netProfitThisMonth = receivedThisMonth - expensesThisMonth;
+    const netProfitLastMonth = receivedLastMonth - expensesLastMonth;
+
+    let expenseIncreaseRaw = 0;
+    if (expensesLastMonth > 0) {
+      expenseIncreaseRaw = ((expensesThisMonth - expensesLastMonth) / expensesLastMonth) * 100;
+    } else if (expensesThisMonth > 0) {
+      expenseIncreaseRaw = 100; // infinite pseudo increase
+    }
+    
+    let profitIncreaseRaw = 0;
+    if (netProfitLastMonth > 0) {
+      profitIncreaseRaw = ((netProfitThisMonth - netProfitLastMonth) / netProfitLastMonth) * 100;
+    } else if (netProfitThisMonth > 0) {
+      profitIncreaseRaw = 100; // infinite pseudo increase
+    }
+
+    return { 
+      receivedThisMonth, 
+      pendingAmount, 
+      expiredCount, 
+      activeClients, 
+      lostCount, 
+      staleDealsCount, 
+      lostAmount, 
+      annualRevenue,
+      expensesThisMonth,
+      netProfitThisMonth,
+      expenseIncreaseRaw,
+      profitIncreaseRaw
+    };
+  }, [clients, invoices, deals, expenses]);
 
   const chartData = [
     { name: 'Recebido', Valor: stats.receivedThisMonth, color: isDarkMode ? '#818cf8' : '#4f46e5' },
+    { name: 'Gastos', Valor: stats.expensesThisMonth, color: isDarkMode ? '#f87171' : '#ef4444' },
+    { name: 'Lucro', Valor: stats.netProfitThisMonth, color: isDarkMode ? '#34d399' : '#10b981' },
     { name: 'Pendente', Valor: stats.pendingAmount, color: isDarkMode ? '#fbbf24' : '#f59e0b' },
-    { name: 'Perdido', Valor: stats.lostAmount, color: isDarkMode ? '#f87171' : '#ef4444' },
   ];
 
   const getAlertStatus = (revenue: number) => {
@@ -227,6 +292,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
           darkColorClass="dark:bg-yellow-900/20 dark:text-yellow-400"
         />
         <StatCard
+          title="Gastos (Mês)"
+          value={stats.expensesThisMonth}
+          icon={TrendingDown}
+          isCurrency={true}
+          colorClass="bg-red-50 text-red-600"
+          darkColorClass="dark:bg-red-900/20 dark:text-red-400"
+        />
+        <StatCard
           title="Faturas Vencidas"
           value={stats.expiredCount}
           icon={AlertCircle}
@@ -237,16 +310,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
           title="Clientes Ativos"
           value={stats.activeClients}
           icon={Users}
-          trend={2}
           colorClass="bg-indigo-50 text-indigo-600"
           darkColorClass="dark:bg-indigo-900/20 dark:text-indigo-400"
-        />
-        <StatCard
-          title="Projetos Perdidos"
-          value={stats.lostCount}
-          icon={XCircle}
-          colorClass="bg-red-50 text-red-600"
-          darkColorClass="dark:bg-red-900/20 dark:text-red-400"
         />
       </div>
 
@@ -356,6 +421,32 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
                 </button>
               </div>
             </div>
+
+            {stats.profitIncreaseRaw >= 15 && (
+              <div className="flex items-start gap-4 p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                <Wallet className="text-emerald-500 shrink-0" size={20} />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Lucro crescendo</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Seu lucro aumentou {stats.profitIncreaseRaw.toFixed(0)}% em relação ao mês passado.</p>
+                </div>
+              </div>
+            )}
+
+            {stats.expenseIncreaseRaw > 20 && (
+              <div className="flex items-start gap-4 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-xl border border-orange-100 dark:border-orange-900/30">
+                <TrendingDown className="text-orange-500 shrink-0" size={20} />
+                <div>
+                  <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">Atenção: Despesa alta</p>
+                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Suas despesas aumentaram {stats.expenseIncreaseRaw.toFixed(0)}% este mês.</p>
+                  <button 
+                    onClick={() => setActiveTab('expenses')}
+                    className="text-xs font-bold text-orange-700 dark:text-orange-400 mt-2 hover:underline"
+                  >
+                    Analisar gastos
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

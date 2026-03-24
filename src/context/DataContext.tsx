@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Client, Service, Deal, Invoice } from '../../types';
+import { Client, Service, Deal, Invoice, Expense } from '../../types';
 import { useAuth } from './AuthContext';
 
 type DataContextType = {
@@ -9,6 +9,7 @@ type DataContextType = {
     services: Service[];
     deals: Deal[];
     invoices: Invoice[];
+    expenses: Expense[];
     loading: boolean;
     refreshData: () => Promise<void>;
     addClient: (client: Omit<Client, 'id' | 'createdAt'>) => Promise<any>;
@@ -22,6 +23,9 @@ type DataContextType = {
     updateDeal: (id: string, updates: Partial<Deal>) => Promise<any>;
     updateInvoice: (id: string, updates: Partial<Invoice>) => Promise<any>;
     deleteInvoice: (id: string) => Promise<any>;
+    addExpense: (expense: Omit<Expense, 'id' | 'createdAt'>) => Promise<any>;
+    updateExpense: (id: string, updates: Partial<Expense>) => Promise<any>;
+    deleteExpense: (id: string) => Promise<any>;
     updateService: (id: string, updates: Partial<Service>) => Promise<any>;
     deleteService: (id: string) => Promise<any>;
     deleteDeal: (id: string) => Promise<any>;
@@ -34,6 +38,7 @@ const DataContext = createContext<DataContextType>({
     services: [],
     deals: [],
     invoices: [],
+    expenses: [],
     loading: true,
     refreshData: async () => { },
     addClient: async () => { },
@@ -46,6 +51,9 @@ const DataContext = createContext<DataContextType>({
     updateDeal: async () => { },
     updateInvoice: async () => { },
     deleteInvoice: async () => { },
+    addExpense: async () => { },
+    updateExpense: async () => { },
+    deleteExpense: async () => { },
     updateService: async () => { },
     deleteService: async () => { },
     deleteDeal: async () => { },
@@ -59,6 +67,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const [services, setServices] = useState<Service[]>([]);
     const [deals, setDeals] = useState<Deal[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
     const [loading, setLoading] = useState(false);
 
     // Helper to map DB snake_case to local camelCase
@@ -105,21 +114,33 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         createdAt: data.created_at,
     });
 
+    const mapExpense = (data: any): Expense => ({
+        id: data.id,
+        userId: data.user_id,
+        category: data.category,
+        description: data.description,
+        value: data.value,
+        date: data.date,
+        createdAt: data.created_at,
+    });
+
     const refreshData = useCallback(async () => {
         if (!user) return;
         setLoading(true);
 
-        const [clientsRes, servicesRes, dealsRes, invoicesRes] = await Promise.all([
+        const [clientsRes, servicesRes, dealsRes, invoicesRes, expensesRes] = await Promise.all([
             supabase.from('clients').select('*').order('created_at', { ascending: false }),
             supabase.from('services').select('*').order('name', { ascending: true }),
             supabase.from('deals').select('*').order('created_at', { ascending: false }),
             supabase.from('invoices').select('*').order('created_at', { ascending: false }),
+            supabase.from('expenses').select('*').order('date', { ascending: false }),
         ]);
 
         if (clientsRes.data) setClients(clientsRes.data.map(mapClient));
         if (servicesRes.data) setServices(servicesRes.data.map(mapService));
         if (dealsRes.data) setDeals(dealsRes.data.map(mapDeal));
         if (invoicesRes.data) setInvoices(invoicesRes.data.map(mapInvoice));
+        if (expensesRes.data) setExpenses(expensesRes.data.map(mapExpense));
 
         setLoading(false);
     }, [user]);
@@ -132,6 +153,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
             setServices([]);
             setDeals([]);
             setInvoices([]);
+            setExpenses([]);
         }
     }, [user, refreshData]);
 
@@ -298,6 +320,36 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         await refreshData();
     };
 
+    const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>) => {
+        const { error } = await supabase.from('expenses').insert([{
+            category: expense.category,
+            description: expense.description,
+            value: expense.value,
+            date: expense.date,
+            user_id: user?.id,
+        }]);
+        if (error) throw error;
+        await refreshData();
+    };
+
+    const updateExpense = async (id: string, updates: Partial<Expense>) => {
+        const dbUpdates: any = {};
+        if (updates.category) dbUpdates.category = updates.category;
+        if (updates.description !== undefined) dbUpdates.description = updates.description;
+        if (updates.value !== undefined) dbUpdates.value = updates.value;
+        if (updates.date) dbUpdates.date = updates.date;
+
+        const { error } = await supabase.from('expenses').update(dbUpdates).eq('id', id);
+        if (error) throw error;
+        await refreshData();
+    };
+
+    const deleteExpense = async (id: string) => {
+        const { error } = await supabase.from('expenses').delete().eq('id', id);
+        if (error) throw error;
+        await refreshData();
+    };
+
     const [userProfile, setUserProfile] = useState(() => {
         const saved = localStorage.getItem('settings_profile');
         return saved ? JSON.parse(saved) : { name: 'Admin', email: 'admin@pipeday.com', pixKey: '' };
@@ -310,11 +362,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     return (
         <DataContext.Provider value={{
-            clients, services, deals, invoices, loading, refreshData,
+            clients, services, deals, invoices, expenses, loading, refreshData,
             addClient, importClients, updateClient, deleteClient,
             addService, updateService, deleteService,
             addDeal, updateDeal, deleteDeal,
             addInvoice, updateInvoice, deleteInvoice,
+            addExpense, updateExpense, deleteExpense,
             userProfile, updateUserProfile
         }}>
             {children}
