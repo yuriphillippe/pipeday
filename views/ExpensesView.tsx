@@ -17,6 +17,7 @@ import { useData } from '../src/context/DataContext';
 import { Expense } from '../types';
 import { usePagination } from '../src/hooks/usePagination';
 import PaginationControls from '../src/components/PaginationControls';
+import { UpgradePrompt } from '../src/components/UpgradePrompt';
 
 interface ExpensesViewProps {
   isDarkMode: boolean;
@@ -35,9 +36,20 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const ExpensesView: React.FC<ExpensesViewProps> = ({ isDarkMode, searchQuery = '' }) => {
-  const { expenses, addExpense, updateExpense, deleteExpense } = useData();
+  const { expenses, addExpense, updateExpense, deleteExpense, plan } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+
+  if (plan === 'FREE') {
+    return (
+      <div className="flex items-center justify-center h-[80vh]">
+        <UpgradePrompt 
+          title="Gestão de Gastos"
+          message="O módulo financeiro completo está disponível a partir do plano PRO. Faça upgrade para controlar suas despesas."
+        />
+      </div>
+    );
+  }
 
   const [formData, setFormData] = useState({
     category: DEFAULT_CATEGORIES[0],

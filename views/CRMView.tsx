@@ -28,6 +28,7 @@ import { useData } from '../src/context/DataContext';
 import { usePagination } from '../src/hooks/usePagination';
 import PaginationControls from '../src/components/PaginationControls';
 import ClientModal from '../src/components/ClientModal';
+import { UpgradePrompt } from '../src/components/UpgradePrompt';
 
 interface CRMViewProps {
   isDarkMode: boolean;
@@ -35,8 +36,9 @@ interface CRMViewProps {
 }
 
 const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
-  const { clients, invoices, deals, services, addClient, importClients, updateClient, deleteClient } = useData();
+  const { clients, invoices, deals, services, addClient, importClients, updateClient, deleteClient, plan, clientsCount } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
 
@@ -230,8 +232,12 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
 
           <button
             onClick={() => {
-              setEditingClient(null);
-              setIsModalOpen(true);
+              if (plan === 'FREE' && clientsCount >= 5) {
+                setShowUpgrade(true);
+              } else {
+                setEditingClient(null);
+                setIsModalOpen(true);
+              }
             }}
             className="w-full sm:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-md active:scale-95 text-sm sm:text-base"
           >
@@ -557,6 +563,19 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
         onSave={handleSave}
         editingClient={editingClient}
       />
+      
+      {/* Modal Upgrade */}
+      {showUpgrade && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+           <div className="relative w-full max-w-md animate-in zoom-in-95 duration-200">
+             <button onClick={() => setShowUpgrade(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10"><X size={24}/></button>
+             <UpgradePrompt 
+                title="Limite de clientes atingido"
+                message="Você atingiu o limite de 5 clientes do seu plano FREE. Faça upgrade para continuar."
+             />
+           </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Download, Plus, Trash2, FileText } from 'lucide-react';
 import { Invoice, Client, Service } from '../../types';
+import { useData } from '../context/DataContext';
 
 interface InvoiceGeneratorProps {
     invoice: Invoice;
@@ -19,6 +20,7 @@ interface InvoiceItem {
 }
 
 const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, service, onClose, userProfile }) => {
+    const { plan } = useData();
     const [zoom, setZoom] = useState(0.7);
 
     const invoiceRef = useRef<HTMLDivElement>(null);
@@ -98,7 +100,7 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
             invoiceRef.current.style.margin = '0';
 
             const html2canvas = (await import('html2canvas')).default;
-            const { jsPDF } = await import('jspdf');
+            const jsPDF = (await import('jspdf')).default;
 
             const canvas = await html2canvas(invoiceRef.current, {
                 scale: 2,
@@ -342,7 +344,9 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ invoice, client, se
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xl font-serif italic text-slate-400">Obrigado pela preferência!</p>
-                                    <p className="text-xs text-slate-300 mt-1">Gerado via PipeDay</p>
+                                    {plan === 'FREE' && (
+                                        <p className="text-xs text-slate-300 mt-1">Gerado via PipeDay</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

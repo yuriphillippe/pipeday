@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Client, Service, Deal, Invoice, Expense } from '../../types';
+import { Client, Service, Deal, Invoice, Expense, PlanType } from '../../types';
 import { useAuth } from './AuthContext';
 
 type DataContextType = {
@@ -31,6 +31,9 @@ type DataContextType = {
     deleteDeal: (id: string) => Promise<any>;
     userProfile: { name: string; email: string; pixKey: string };
     updateUserProfile: (profile: { name: string; email: string; pixKey: string }) => void;
+    plan: PlanType;
+    proposalsCreatedThisMonth: number;
+    clientsCount: number;
 };
 
 const DataContext = createContext<DataContextType>({
@@ -59,6 +62,9 @@ const DataContext = createContext<DataContextType>({
     deleteDeal: async () => { },
     userProfile: { name: 'Admin', email: '', pixKey: '' },
     updateUserProfile: () => { },
+    plan: 'FREE',
+    proposalsCreatedThisMonth: 0,
+    clientsCount: 0,
 });
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
@@ -69,6 +75,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [loading, setLoading] = useState(false);
+
+    const [plan, setPlan] = useState<PlanType>('FREE');
+    const [proposalsCreatedThisMonth, setProposalsCreatedThisMonth] = useState<number>(0);
 
     // Helper to map DB snake_case to local camelCase
     const mapClient = (data: any): Client => ({
@@ -128,13 +137,22 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         if (!user) return;
         setLoading(true);
 
-        const [clientsRes, servicesRes, dealsRes, invoicesRes, expensesRes] = await Promise.all([
+        const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
+        const [clientsRes, servicesRes, dealsRes, invoicesRes, expensesRes, subscriptionRes, usageRes] = await Promise.all([
             supabase.from('clients').select('*').order('created_at', { ascending: false }),
             supabase.from('services').select('*').order('name', { ascending: true }),
             supabase.from('deals').select('*').order('created_at', { ascending: false }),
             supabase.from('invoices').select('*').order('created_at', { ascending: false }),
             supabase.from('expenses').select('*').order('date', { ascending: false }),
+            supabase.from('subscriptions').select('plan').eq('user_id', user.id).maybeSingle(),
+            supabase.from('usage_tracking').select('proposals_created').eq('user_id', user.id).eq('month_year', currentMonth).maybeSingle(),
         ]);
+
+        if (subscriptionRes.data) setPlan(subscriptionRes.data.plan as PlanType);
+        else setPlan('FREE');
+
+        if (usageRes.data) setProposalsCreatedThisMonth(usageRes.data.proposals_created || 0);
+        else setProposalsCreatedThisMonth(0);
 
         if (clientsRes.data) setClients(clientsRes.data.map(mapClient));
         if (servicesRes.data) setServices(servicesRes.data.map(mapService));
@@ -154,6 +172,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
             setDeals([]);
             setInvoices([]);
             setExpenses([]);
+            setPlan('FREE');
+            setProposalsCreatedThisMonth(0);
         }
     }, [user, refreshData]);
 
@@ -368,7 +388,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
             addDeal, updateDeal, deleteDeal,
             addInvoice, updateInvoice, deleteInvoice,
             addExpense, updateExpense, deleteExpense,
-            userProfile, updateUserProfile
+            userProfile, updateUserProfile,
+            plan, proposalsCreatedThisMonth, clientsCount: clients.length
         }}>
             {children}
         </DataContext.Provider>

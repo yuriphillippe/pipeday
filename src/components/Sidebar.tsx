@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useData } from '../context/DataContext';
 import {
     LayoutDashboard,
     Users,
@@ -78,6 +79,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setIsSidebarOpen,
     userEmail
 }) => {
+    const { plan } = useData();
+
     return (
         <>
             {/* Overlay for mobile */}
@@ -171,7 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             </div>
                             <div className="flex-1 overflow-hidden">
                                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{userEmail || 'Admin User'}</p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Plano Pro</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-semibold text-indigo-600 dark:text-indigo-400">Plano {plan}</p>
                             </div>
                         </div>
                     )}

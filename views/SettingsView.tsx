@@ -14,8 +14,8 @@ import {
   CreditCard as CardIcon,
   CheckCircle2,
   AlertTriangle,
-  // Added Plus icon to fix the error on line 254
-  Plus
+  Plus,
+  X
 } from 'lucide-react';
 import { useData } from '../src/context/DataContext';
 
@@ -29,7 +29,7 @@ type SettingsSection = 'profile' | 'security' | 'billing' | 'notifications' | 'w
 const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }) => {
   const [currentSection, setCurrentSection] = useState<SettingsSection>('profile');
 
-  const { userProfile, updateUserProfile } = useData();
+  const { userProfile, updateUserProfile, plan } = useData();
 
   // Local state for form editing, initialized from context
   const [profile, setProfile] = useState(userProfile);
@@ -49,11 +49,59 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
     return saved ? JSON.parse(saved) : { payments: true, leads: true, expired: true, reports: false };
   });
 
+  const [teamMembers, setTeamMembers] = useState(() => {
+    const saved = localStorage.getItem('settings_team_members');
+    return saved ? JSON.parse(saved) : [
+      { name: userProfile.name, role: 'Owner (Dono)', email: userProfile.email }
+    ];
+  });
+
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('Visualizador');
+
   const handleSave = () => {
     updateUserProfile(profile);
     localStorage.setItem('settings_workspace', JSON.stringify(workspace));
     localStorage.setItem('settings_notifications', JSON.stringify(notifications));
     alert('Configurações salvas com sucesso!');
+  };
+
+  const handleInvite = () => {
+    if (plan !== 'BUSINESS') {
+      alert('Recurso disponível apenas no plano BUSINESS. Faça o upgrade para gerenciar sua equipe.');
+      return;
+    }
+    if (teamMembers.length >= 4) {
+      alert('Limite de usuários atingido! O plano Business permite até 4 usuários (1 Dono + 3 Membros).');
+      return;
+    }
+    setIsInviteModalOpen(true);
+  };
+
+  const confirmInvite = () => {
+    if (!inviteEmail) {
+      alert('Por favor, informe o e-mail do convidado.');
+      return;
+    }
+
+    const newMember = {
+      name: inviteEmail.split('@')[0],
+      role: inviteRole,
+      email: inviteEmail
+    };
+
+    const updatedTeam = [...teamMembers, newMember];
+    setTeamMembers(updatedTeam);
+    localStorage.setItem('settings_team_members', JSON.stringify(updatedTeam));
+    
+    const subject = encodeURIComponent('Você foi convidado para o PipeDay');
+    const body = encodeURIComponent(`Olá, você foi convidado por ${userProfile.name} para o perfil de ${inviteRole} no PipeDay.\n\nAcesse a plataforma e crie sua conta!`);
+    window.open(`mailto:${inviteEmail}?subject=${subject}&body=${body}`, '_blank');
+
+    setInviteEmail('');
+    setInviteRole('Visualizador');
+    setIsInviteModalOpen(false);
   };
 
   const NavButton = ({ id, icon: Icon, label }: { id: SettingsSection; icon: any; label: string }) => (
@@ -314,16 +362,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
               <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Membros da Equipe</h3>
-                  <button className="text-indigo-600 font-bold text-sm flex items-center gap-1"><Plus size={16} /> Convidar</button>
+                  <button onClick={handleInvite} className="text-indigo-600 font-bold text-sm flex items-center gap-1"><Plus size={16} /> Convidar</button>
                 </div>
                 <div className="space-y-3">
-                  {[
-                    { name: profile.name, role: 'Dono', email: profile.email },
-                    { name: 'Carlos Sales', role: 'Editor', email: 'carlos@pipeday.com' }
-                  ].map((user, idx) => (
+                  {teamMembers.map((user: any, idx: number) => (
                     <div key={idx} className="flex items-center justify-between p-3 border border-slate-50 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/50">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">{user.name.charAt(0)}</div>
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">{user.name.charAt(0).toUpperCase()}</div>
                         <div>
                           <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{user.name}</p>
                           <p className="text-[10px] text-slate-500">{user.email}</p>
@@ -350,6 +395,60 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
           )}
         </div>
       </div>
+
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Convidar Membro</h3>
+              <button 
+                onClick={() => setIsInviteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail do Convidado</label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="email@exemplo.com"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Função</label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 dark:text-slate-100"
+                >
+                  <option value="Admin">Admin (Acesso Total exceto gerenciar outros)</option>
+                  <option value="Operacional">Operacional (Criar/Editar Propostas e Clientes)</option>
+                  <option value="Visualizador">Visualizador (Apenas visualizar propostas e status)</option>
+                </select>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+              <button
+                onClick={() => setIsInviteModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmInvite}
+                className="px-6 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 dark:shadow-none"
+              >
+                Enviar Convite
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

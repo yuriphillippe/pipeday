@@ -24,7 +24,7 @@ interface DashboardViewProps {
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery = '', setActiveTab }) => {
-  const { clients, deals, invoices, expenses, userProfile } = useData();
+  const { clients, deals, invoices, expenses, userProfile, plan, proposalsCreatedThisMonth } = useData();
 
   const MEI_LIMIT = 81000;
   const MEI_ALERT_LEVEL_1 = MEI_LIMIT * 0.6; // 48.600
@@ -385,6 +385,27 @@ const DashboardView: React.FC<DashboardViewProps> = ({ isDarkMode, searchQuery =
         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Alertas Rápidos</h3>
           <div className="space-y-4">
+            
+            {plan === 'FREE' && (
+              <div className="flex items-start gap-4 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-xl border border-purple-100 dark:border-purple-900/30">
+                <Briefcase className="text-purple-500 shrink-0" size={20} />
+                <div className="w-full">
+                  <div className="flex justify-between items-center mb-1">
+                      <p className="text-sm font-semibold text-purple-800 dark:text-purple-300">Uso do Plano FREE</p>
+                      <span className="text-xs font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{proposalsCreatedThisMonth} / 5</span>
+                  </div>
+                  <p className="text-xs text-purple-600 dark:text-purple-400 mt-1 mb-2">Você utilizou {proposalsCreatedThisMonth} de 5 propostas este mês.</p>
+                  
+                  <div className="w-full bg-purple-100 dark:bg-purple-900/30 rounded-full h-1.5 mb-2">
+                    <div className="bg-purple-500 h-1.5 rounded-full transition-all" style={{ width: `${Math.min((proposalsCreatedThisMonth / 5) * 100, 100)}%` }}></div>
+                  </div>
+                  {proposalsCreatedThisMonth >= 5 && (
+                      <button onClick={() => setActiveTab('settings')} className="text-xs font-bold text-purple-700 dark:text-purple-400 mt-1 hover:underline">Fazer Upgrade</button>
+                  )}
+                </div>
+              </div>
+            )}
+            
             {stats.expiredCount > 0 ? (
               <div className="flex items-start gap-4 p-4 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/30">
                 <AlertCircle className="text-red-500 shrink-0" size={20} />

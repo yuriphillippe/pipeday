@@ -60,4 +60,21 @@ export type AppState = {
   deals: Deal[];
   invoices: Invoice[];
   expenses: Expense[];
+  plan?: 'FREE' | 'PRO' | 'BUSINESS';
+};
+
+export type PlanType = 'FREE' | 'PRO' | 'BUSINESS';
+
+export type Subscription = {
+  userId: string;
+  plan: PlanType;
+  createdAt: string;
+};
+
+export type UsageTracking = {
+  id: string;
+  userId: string;
+  monthYear: string;
+  proposalsCreated: number;
+  createdAt: string;
 };

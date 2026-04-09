@@ -5,6 +5,7 @@ import { Deal, Stage } from '../types';
 import { STAGES } from '../constants';
 import { useData } from '../src/context/DataContext';
 import ClientModal from '../src/components/ClientModal';
+import { UpgradePrompt } from '../src/components/UpgradePrompt';
 
 interface FunnelViewProps {
   isDarkMode: boolean;
@@ -12,9 +13,10 @@ interface FunnelViewProps {
 }
 
 const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
-  const { deals, clients, services, addDeal, updateDeal, deleteDeal: contextDeleteDeal, addInvoice, addClient } = useData();
+  const { deals, clients, services, addDeal, updateDeal, deleteDeal: contextDeleteDeal, addInvoice, addClient, plan, clientsCount, proposalsCreatedThisMonth } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState<'client' | 'deal' | null>(null);
   const [newDeal, setNewDeal] = useState<{
     clientId: string;
     serviceId: string;
@@ -162,13 +164,25 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button
-            onClick={() => setIsClientModalOpen(true)}
+            onClick={() => {
+               if (plan === 'FREE' && clientsCount >= 5) {
+                   setShowUpgrade('client');
+               } else {
+                   setIsClientModalOpen(true);
+               }
+            }}
             className="w-full sm:w-auto bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm text-sm"
           >
             Novo Cliente
           </button>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              if (plan === 'FREE' && proposalsCreatedThisMonth >= 5) {
+                  setShowUpgrade('deal');
+              } else {
+                  setIsModalOpen(true);
+              }
+            }}
             className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors shadow-md text-sm"
           >
             <Plus size={18} />
@@ -384,6 +398,21 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
           setIsClientModalOpen(false);
         }}
       />
+
+      {/* Modal Upgrade */}
+      {showUpgrade && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+           <div className="relative w-full max-w-md animate-in zoom-in-95 duration-200">
+             <button onClick={() => setShowUpgrade(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10"><X size={24}/></button>
+             <UpgradePrompt 
+                title={showUpgrade === 'client' ? "Limite de clientes atingido" : "Limite de propostas atingido"}
+                message={showUpgrade === 'client' 
+                  ? "Você atingiu o limite de 5 clientes do seu plano FREE. Faça upgrade para continuar."
+                  : "Você atingiu o limite de 5 negócios por mês do seu plano FREE. Faça upgrade para continuar."}
+             />
+           </div>
+        </div>
+      )}
 
       {/* Modal Decisão Fechado/Perdido */}
       {decisionModal.isOpen && (
