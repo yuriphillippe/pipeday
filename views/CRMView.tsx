@@ -209,8 +209,7 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50 italic flex items-center gap-3">
-            <Users className="text-indigo-600 dark:text-indigo-400" size={28} />
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50">
             Gerenciamento de Clientes
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">Organize sua base de contatos e visualize históricos.</p>

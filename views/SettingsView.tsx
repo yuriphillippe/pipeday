@@ -29,7 +29,7 @@ type SettingsSection = 'profile' | 'security' | 'billing' | 'notifications' | 'w
 const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }) => {
   const [currentSection, setCurrentSection] = useState<SettingsSection>('profile');
 
-  const { userProfile, updateUserProfile, plan } = useData();
+  const { userProfile, updateUserProfile, plan, clientsCount, proposalsCreatedThisMonth } = useData();
 
   // Local state for form editing, initialized from context
   const [profile, setProfile] = useState(userProfile);
@@ -57,6 +57,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
   });
 
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('Visualizador');
 
@@ -104,6 +105,27 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
     setIsInviteModalOpen(false);
   };
 
+  const confirmDelete = () => {
+    alert('Workspace excluído com sucesso.');
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleRemoveMember = (idx: number) => {
+    if (idx === 0) return; // Cannot delete the owner
+    const updatedTeam = [...teamMembers];
+    updatedTeam.splice(idx, 1);
+    setTeamMembers(updatedTeam);
+    localStorage.setItem('settings_team_members', JSON.stringify(updatedTeam));
+  };
+
+  const handleRoleChange = (idx: number, newRole: string) => {
+    if (idx === 0) return; // Cannot change owner
+    const updatedTeam = [...teamMembers];
+    updatedTeam[idx].role = newRole;
+    setTeamMembers(updatedTeam);
+    localStorage.setItem('settings_team_members', JSON.stringify(updatedTeam));
+  };
+
   const NavButton = ({ id, icon: Icon, label }: { id: SettingsSection; icon: any; label: string }) => (
     <button
       onClick={() => setCurrentSection(id)}
@@ -115,6 +137,21 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
       <Icon size={18} /> {label}
     </button>
   );
+
+  const getPlanName = () => {
+    switch (plan) {
+      case 'PRO': return 'Pipe Pro';
+      case 'BUSINESS': return 'Pipe Business';
+      default: return 'Pipe Free';
+    }
+  };
+
+  const getRenewalDate = () => {
+    if (plan === 'FREE') return 'Sem vencimento';
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    return `Próxima renovação: ${nextMonth.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 pb-12">
@@ -252,8 +289,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex-1 bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 rounded-2xl text-white shadow-xl shadow-indigo-200 dark:shadow-none">
                     <p className="text-indigo-100 text-sm font-medium">Plano</p>
-                    <h4 className="text-2xl font-black mt-1">Pipe Pro</h4>
-                    <p className="text-indigo-100 text-sm mt-4">Próxima renovação: 12 Nov, 2024</p>
+                    <h4 className="text-2xl font-black mt-1">{getPlanName()}</h4>
+                    <p className="text-indigo-100 text-sm mt-4">{getRenewalDate()}</p>
                     <div className="mt-6 flex gap-3">
                       <button className="flex-1 bg-white text-indigo-600 py-2 rounded-xl text-sm font-bold hover:bg-indigo-50 transition-colors">Gerenciar Assinatura</button>
                     </div>
@@ -262,19 +299,19 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
                   <div className="flex-1 grid grid-cols-2 gap-3">
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase">Clientes</p>
-                      <p className="text-xl font-black text-slate-800 dark:text-slate-100">∞</p>
+                      <p className="text-xl font-black text-slate-800 dark:text-slate-100">{plan === 'FREE' ? `${clientsCount}/5` : '∞'}</p>
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Faturas/mês</p>
-                      <p className="text-xl font-black text-slate-800 dark:text-slate-100">∞</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Propostas/mês</p>
+                      <p className="text-xl font-black text-slate-800 dark:text-slate-100">{plan === 'FREE' ? `${proposalsCreatedThisMonth}/5` : '∞'}</p>
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase">Espaço</p>
-                      <p className="text-xl font-black text-slate-800 dark:text-slate-100">10GB</p>
+                      <p className="text-xl font-black text-slate-800 dark:text-slate-100">{plan === 'BUSINESS' ? '20GB' : plan === 'PRO' ? '10GB' : '1GB'}</p>
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase">Usuários</p>
-                      <p className="text-xl font-black text-slate-800 dark:text-slate-100">5/5</p>
+                      <p className="text-xl font-black text-slate-800 dark:text-slate-100">{plan === 'BUSINESS' ? 'até 4' : '1'}</p>
                     </div>
                   </div>
                 </div>
@@ -359,14 +396,80 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
                 </div>
               </section>
 
-              <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Membros da Equipe</h3>
+              <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">Guia de Funções</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    
+                    {/* Owner Card */}
+                    <div className="group relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[1rem] shadow-sm border border-slate-100 dark:border-slate-700 cursor-help transition-all hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md">
+                      <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">Owner (Dono)</p>
+                      
+                      <div className="absolute opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-xl shadow-xl transition-opacity z-50 border border-slate-700">
+                        <ul className="space-y-1 list-disc pl-4">
+                          <li>Responsável pelo workspace.</li>
+                          <li>Acesso total ao sistema</li>
+                          <li>Gerencia usuários e permissões</li>
+                          <li>Acessa todas as informações financeiras</li>
+                          <li>Pode alterar o plano e configurações da conta</li>
+                        </ul>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-800 dark:border-t-slate-900"></div>
+                      </div>
+                    </div>
+
+                    {/* Admin Card */}
+                    <div className="group relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[1rem] shadow-sm border border-slate-100 dark:border-slate-700 cursor-help transition-all hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md">
+                      <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">Admin</p>
+                      <div className="absolute opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-3 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-xl shadow-xl transition-opacity z-50 border border-slate-700">
+                        <ul className="space-y-1 list-disc pl-4">
+                          <li>Usuário com controle avançado.</li>
+                          <li>Gerencia clientes e propostas</li>
+                          <li>Pode convidar e gerenciar usuários</li>
+                          <li>Pode acessar o financeiro (se permitido)</li>
+                        </ul>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-800 dark:border-t-slate-900"></div>
+                      </div>
+                    </div>
+
+                    {/* Operacional Card */}
+                    <div className="group relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[1rem] shadow-sm border border-slate-100 dark:border-slate-700 cursor-help transition-all hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md">
+                      <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">Operacional</p>
+                      <div className="absolute opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-3 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-xl shadow-xl transition-opacity z-50 border border-slate-700">
+                        <ul className="space-y-1 list-disc pl-4">
+                          <li>Usuário para execução do dia a dia.</li>
+                          <li>Cria e edita propostas</li>
+                          <li>Gerencia clientes</li>
+                          <li>Não acessa financeiro</li>
+                          <li>Não gerencia usuários</li>
+                        </ul>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-800 dark:border-t-slate-900"></div>
+                      </div>
+                    </div>
+
+                    {/* Visualizador Card */}
+                    <div className="group relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[1rem] shadow-sm border border-slate-100 dark:border-slate-700 cursor-help transition-all hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md">
+                      <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">Visualizador</p>
+                      <div className="absolute opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-3 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-xl shadow-xl transition-opacity z-50 border border-slate-700">
+                        <ul className="space-y-1 list-disc pl-4">
+                          <li>Acesso apenas para acompanhamento.</li>
+                          <li>Visualiza propostas e informações</li>
+                          <li>Não pode editar ou criar</li>
+                          <li>Não acessa financeiro</li>
+                        </ul>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-800 dark:border-t-slate-900"></div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-6">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Membros da Equipe ({teamMembers.length}/4)</h3>
                   <button onClick={handleInvite} className="text-indigo-600 font-bold text-sm flex items-center gap-1"><Plus size={16} /> Convidar</button>
                 </div>
                 <div className="space-y-3">
                   {teamMembers.map((user: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-3 border border-slate-50 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/50">
+                    <div key={idx} className="flex items-center justify-between p-3 border border-slate-50 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">{user.name.charAt(0).toUpperCase()}</div>
                         <div>
@@ -374,20 +477,44 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
                           <p className="text-[10px] text-slate-500">{user.email}</p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">{user.role}</span>
+                      
+                      <div className="flex items-center gap-3">
+                        {idx === 0 ? (
+                            <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">{user.role}</span>
+                        ) : (
+                            <select 
+                                value={user.role} 
+                                onChange={(e) => handleRoleChange(idx, e.target.value)}
+                                className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 px-2 py-0.5 rounded focus:outline-none cursor-pointer"
+                            >
+                                <option value="Admin">Admin</option>
+                                <option value="Operacional">Operacional</option>
+                                <option value="Visualizador">Visualizador</option>
+                            </select>
+                        )}
+
+                        {idx !== 0 && (
+                            <button onClick={() => handleRemoveMember(idx)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Remover Membro">
+                                <Trash2 size={16} />
+                            </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               </section>
 
-              <section className="p-6 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/30 flex items-center justify-between">
+              <section className="p-6 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/30 flex flex-col items-start gap-4">
                 <div>
                   <h3 className="text-sm font-bold text-red-800 dark:text-red-300 flex items-center gap-2">
                     <AlertTriangle size={16} /> Zona Crítica
                   </h3>
                   <p className="text-xs text-red-600 dark:text-red-400 mt-1">Excluir este workspace removerá todos os clientes, faturas e negócios sem possibilidade de recuperação.</p>
                 </div>
-                <button className="px-4 py-2 bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/30 rounded-xl text-sm font-bold hover:bg-red-600 dark:hover:bg-red-700 hover:text-white transition-all shadow-sm">
+                <button 
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="px-4 py-2 bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/30 rounded-xl text-sm font-bold hover:bg-red-600 dark:hover:bg-red-700 hover:text-white transition-all shadow-sm"
+                >
                   Excluir Permanentemente
                 </button>
               </section>
@@ -444,6 +571,43 @@ const SettingsView: React.FC<SettingsViewProps> = ({ isDarkMode, setIsDarkMode }
                 className="px-6 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 dark:shadow-none"
               >
                 Enviar Convite
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
+                <AlertTriangle size={20} />
+                Confirmar Exclusão?
+              </h3>
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-slate-700 dark:text-slate-300">
+                Realmente deseja excluir? Não será possível recuperar os dados.
+              </p>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-6 py-2 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-md shadow-red-200 dark:shadow-none"
+              >
+                Excluir Permanentemente
               </button>
             </div>
           </div>

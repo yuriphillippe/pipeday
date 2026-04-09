@@ -174,8 +174,7 @@ const ExpensesView: React.FC<ExpensesViewProps> = ({ isDarkMode, searchQuery = '
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50 italic flex items-center gap-3">
-            <WalletCards className="text-red-500 dark:text-red-400" size={28} />
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50">
             Gestão de Gastos
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">Mantenha o controle financeiro registrando suas despesas.</p>
