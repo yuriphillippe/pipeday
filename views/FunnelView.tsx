@@ -191,8 +191,8 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto pb-4">
-        <div className="flex gap-4 h-full">
+      <div className="flex-1 overflow-x-auto overflow-y-auto pb-4">
+        <div className="flex flex-col lg:flex-row gap-4 h-full">
           {STAGES.map((stage) => {
             const stageDeals = filteredDeals.filter(d => d.stage === stage.id);
             const totalValue = stageDeals.reduce((acc, curr) => acc + curr.value, 0);
@@ -200,7 +200,7 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
             return (
               <div
                 key={stage.id}
-                className="flex-1 min-w-[250px] flex flex-col"
+                className="flex-1 w-full lg:min-w-[250px] lg:w-auto flex flex-col"
                 onDrop={(e) => handleDrop(e, stage.id)}
                 onDragOver={handleDragOver}
               >
@@ -217,7 +217,7 @@ const FunnelView: React.FC<FunnelViewProps> = ({ isDarkMode, searchQuery }) => {
                   </span>
                 </div>
 
-                <div className="flex-1 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl p-4 space-y-4 border-2 border-dashed border-slate-200 dark:border-slate-800 min-h-[500px]">
+                <div className="flex-1 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl p-4 space-y-4 border-2 border-dashed border-slate-200 dark:border-slate-800 min-h-[150px] lg:min-h-[500px]">
                   {stageDeals.map((deal) => {
                     const client = clients.find(c => c.id === deal.clientId);
                     const service = services.find(s => s.id === deal.serviceId);

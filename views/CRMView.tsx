@@ -260,7 +260,7 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto hidden sm:block">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
@@ -362,6 +362,58 @@ const CRMView: React.FC<CRMViewProps> = ({ isDarkMode, searchQuery }) => {
               </p>
             </div>
           )}
+        </div>
+
+        {/* Mobile View */}
+        <div className="sm:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+          {paginatedClients.map((client) => {
+            const clientInvoices = invoices.filter(i => i.clientId === client.id && i.status === 'PAID');
+            const totalBilled = clientInvoices.reduce((acc, curr) => acc + curr.value, 0);
+            const activeDeals = deals.filter(d => d.clientId === client.id && d.stage !== 'CLOSED');
+
+            return (
+              <div key={`mobile-${client.id}`} className="p-4 flex flex-col gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-700">
+                      {client.name ? client.name.charAt(0).toUpperCase() : '?'}
+                    </div>
+                    <div>
+                      <button onClick={() => setViewingClient(client)} className="text-left hover:opacity-75 transition-opacity">
+                        <p className="font-semibold text-slate-800 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{client.name}</p>
+                      </button>
+                      {client.companyName && (
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{client.companyName}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleEdit(client)} className="p-2 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all" title="Editar"><Edit size={16} /></button>
+                    <button onClick={() => handleDelete(client.id)} className="p-2 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Excluir"><Trash2 size={16} /></button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Negócios Ativos</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-300">{activeDeals.length}</p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Faturamento</p>
+                    <p className="font-bold text-emerald-600 dark:text-emerald-400">R$ {totalBilled.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center mt-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+                  <div className="flex items-center gap-3">
+                    {client.whatsapp && <a href={`https://wa.me/${client.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-green-500"><Phone size={14} /></a>}
+                    {client.email && <a href={`mailto:${client.email}`} className="text-slate-400 hover:text-indigo-500"><Mail size={14} /></a>}
+                  </div>
+                  <button onClick={() => setViewingClient(client)} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 flex items-center gap-1">Ver Detalhes <ExternalLink size={12} /></button>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {filteredClients.length > 0 && (
