@@ -137,6 +137,7 @@ const InvoicesView: React.FC<InvoicesViewProps> = ({ isDarkMode, searchQuery }) 
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto hidden sm:block">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">
@@ -225,6 +226,83 @@ const InvoicesView: React.FC<InvoicesViewProps> = ({ isDarkMode, searchQuery }) 
             })}
           </tbody>
         </table>
+        </div>
+
+        {/* Mobile View */}
+        <div className="sm:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+          {paginatedInvoices.map((inv) => {
+            const client = clients.find(c => c.id === inv.clientId);
+            const service = services.find(s => s.id === inv.serviceId);
+
+            return (
+              <div key={`mobile-${inv.id}`} className="p-4 flex flex-col gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                      {inv.invoiceNumber || `PROPOSTA #${inv.id.substring(0, 8)}`}
+                    </span>
+                    <span className="text-[10px] text-slate-400 uppercase font-black tracking-tighter mt-0.5">Seq. {inv.id.substring(0, 4)}</span>
+                  </div>
+                  {getStatusBadge(inv.status)}
+                </div>
+
+                <div className="mt-1">
+                  <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">
+                    {client?.name || '---'}
+                    {client?.companyName && <span className="text-xs font-normal text-slate-500 ml-1">({client.companyName})</span>}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{service?.name || '---'}</p>
+                </div>
+
+                <div className="flex justify-between items-center mt-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-xs font-medium">
+                    <Calendar size={14} className="text-slate-400 dark:text-slate-500" />
+                    {new Date(inv.dueDate).toLocaleDateString('pt-BR')}
+                  </div>
+                  <p className="font-black text-slate-800 dark:text-slate-100">R$ {inv.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    onClick={() => {
+                      setSelectedInvoice(inv);
+                      setIsGeneratorOpen(true);
+                    }}
+                    className="p-2 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+                    title="Ver Fatura"
+                  >
+                    <Eye size={16} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedInvoice(inv);
+                      setIsGeneratorOpen(true);
+                    }}
+                    className="p-2 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+                    title="Baixar PDF"
+                  >
+                    <Download size={16} />
+                  </button>
+                  {inv.status === 'PENDING' && (
+                    <button
+                      onClick={() => handleShowPix(inv)}
+                      className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors flex items-center gap-1"
+                    >
+                      <QrCode size={14} /> Pix
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteInvoice(inv.id)}
+                    className="p-2 text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-lg transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         {filteredInvoices.length === 0 && (
           <div className="py-20 text-center">
             <Receipt size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-4" />
